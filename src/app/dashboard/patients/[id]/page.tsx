@@ -1,12 +1,45 @@
 // src/app/dashboard/patients/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useRef, use as usePromise } from "react";
+import React, { useEffect, useRef, useState, use as usePromise } from "react";
 import Topbar from "@/components/Topbar";
-import { FileText, Star, StarOff, UploadCloud } from "lucide-react";
+import { FileText, Star, StarOff, UploadCloud, Search } from "lucide-react";
+
+/* ----------------- Types (no any) ----------------- */
+type Patient = {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  idnum?: string;
+  dob?: string | null;
+  lastVisit?: string | null;
+  address?: string | null;
+
+  registrationDate?: string | null;
+  allergies?: string | null;
+  chronicDiseases?: string | null;
+  bloodType?: string | null;
+  pastIllnesses?: string | null;
+};
+
+type PatientDoc = {
+  id: string;
+  patientId: string;
+  title: string;
+  date: string | Date;
+  isFavorite: boolean;
+  fileName?: string;
+};
+
+type SearchHit = {
+  id: string;
+  score: number;
+  text: string;
+};
 
 /* ----------------- Helpers: patient meta with fallbacks -------------- */
-function buildPatientMeta(p: any) {
+function buildPatientMeta(p: Patient) {
   return {
     dob: p.dob ?? "23.07.1994",
     registrationDate: p.registrationDate ?? p.lastVisit ?? "12 May 2022",
@@ -18,10 +51,170 @@ function buildPatientMeta(p: any) {
   };
 }
 
+function formatDocDate(d: PatientDoc["date"]) {
+  const dt = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(dt.getTime())) return String(d);
+  return dt.toLocaleDateString();
+}
+
+/* -------------------------- Proxy APIs (same domain, no CORS) -------------------------- */
+async function callExtractFileAPI(file: File) {
+  const fd = new FormData();
+  fd.append("file", file);
+
+  const res = await fetch("/api/extract-file", {
+    method: "POST",
+    body: fd,
+    cache: "no-store",
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function callSemanticSearchAPI(query: string): Promise<SearchHit[]> {
+  const res = await fetch("/api/semantic-search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+    cache: "no-store",
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+  const json = await res.json();
+  return (json.results ?? []) as SearchHit[];
+}
+
+/* -------------------------- Semantic result UI helpers -------------------------- */
+function scoreToPercent(score: number) {
+  const s = Math.max(0, Math.min(1, score));
+  return Math.round(s * 100);
+}
+
+function extractMetaFromText(text: string) {
+  const firstMention = text.match(/Premi[eè]re mention:\s*([0-9-]+)/i)?.[1] ?? null;
+  const lastConsult = text.match(/Dernière consultation:\s*([0-9-]+)/i)?.[1] ?? null;
+  const diagnosisDate = text.match(/date diagnostic:\s*([0-9-]+)/i)?.[1] ?? null;
+  const status = text.match(/Statut:\s*([^.;\n]+)/i)?.[1]?.trim() ?? null;
+
+  const title = text.split(":")[0]?.slice(0, 60)?.trim() || "Result";
+  return { title, firstMention, lastConsult, diagnosisDate, status };
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const pct = scoreToPercent(score);
+  const level =
+    pct >= 80 ? "Excellent" : pct >= 65 ? "Good" : pct >= 50 ? "Medium" : "Low";
+
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      {level} • {pct}%
+    </span>
+  );
+}
+
+function ResultCard({
+  hit,
+  isBest,
+}: {
+  hit: SearchHit;
+  isBest?: boolean;
+}) {
+  const pct = scoreToPercent(hit.score);
+  const meta = extractMetaFromText(hit.text);
+
+  return (
+    <article
+      className={[
+        "rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md",
+        isBest
+          ? "border-2 border-emerald-400 ring-2 ring-emerald-100"
+          : "border border-slate-100",
+      ].join(" ")}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {isBest && (
+              <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-white">
+                Best match
+              </span>
+            )}
+
+            <p className="truncate text-sm font-semibold text-slate-900">{meta.title}</p>
+            <span className="text-[11px] text-slate-400">Hit: {hit.id}</span>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            {meta.status && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                Status: {meta.status}
+              </span>
+            )}
+            {meta.firstMention && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                First: {meta.firstMention}
+              </span>
+            )}
+            {(meta.lastConsult || meta.diagnosisDate) && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                {meta.lastConsult
+                  ? `Last consult: ${meta.lastConsult}`
+                  : `Diagnosis: ${meta.diagnosisDate}`}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <ScoreBadge score={hit.score} />
+      </div>
+
+      <div className="mt-3">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={isBest ? "h-full rounded-full bg-emerald-600" : "h-full rounded-full bg-emerald-500"}
+            style={{ width: `${pct}%` }}
+            aria-label={`score ${pct}%`}
+          />
+        </div>
+        <div className="mt-1 flex justify-between text-[11px] text-slate-400">
+          <span>{isBest ? "Top relevance" : "Relevance"}</span>
+          <span>{hit.score.toFixed(3)}</span>
+        </div>
+      </div>
+
+      <details className="mt-3">
+        <summary className="cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900">
+          View extracted passage
+        </summary>
+        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{hit.text}</p>
+      </details>
+    </article>
+  );
+}
+
 /* -------------------------- Documents panel ------------------------- */
-function DocumentsPanel({ docs, patientId }: { docs: any[]; patientId: string }) {
+function DocumentsPanel({
+  docs,
+  setDocs,
+  patientId,
+}: {
+  docs: PatientDoc[];
+  setDocs: React.Dispatch<React.SetStateAction<PatientDoc[]>>;
+  patientId: string;
+}) {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"all" | "favorite" | "recent">("recent");
+
+  const [uploading, setUploading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const [semanticQ, setSemanticQ] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchHits, setSearchHits] = useState<SearchHit[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -31,26 +224,63 @@ function DocumentsPanel({ docs, patientId }: { docs: any[]; patientId: string })
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("title", file.name);
+    setUploadError(null);
+    setUploading(true);
+    setExtracting(false);
 
-    const res = await fetch(`/api/patients/${patientId}/documents`, {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      // 1) Save in MongoDB via your Next route
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", file.name);
 
-    const result = await res.json();
-    alert(result.message || "Uploaded!");
+      const res = await fetch(`/api/patients/${patientId}/documents`, {
+        method: "POST",
+        body: formData,
+      });
 
-    window.location.reload();
-    e.target.value = "";
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved?.error || "Upload failed");
+
+      if (saved?.document) {
+        setDocs((prev) => [saved.document as PatientDoc, ...prev]);
+      }
+
+      // 2) Extract + index (FastAPI behind Next proxy)
+      setExtracting(true);
+      await callExtractFileAPI(file);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload/index failed");
+    } finally {
+      setUploading(false);
+      setExtracting(false);
+      e.target.value = "";
+    }
   };
+
+  async function runSemanticSearch() {
+    const q = semanticQ.trim();
+    if (!q) {
+      setSearchHits([]);
+      return;
+    }
+    setSearchError(null);
+    setSearching(true);
+    try {
+      const hits = await callSemanticSearchAPI(q);
+      setSearchHits(hits);
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : "Search failed");
+      setSearchHits([]);
+    } finally {
+      setSearching(false);
+    }
+  }
 
   const filtered = docs
     .filter((d) => d.title.toLowerCase().includes(query.trim().toLowerCase()))
-    .filter((d, idx) => {
-      if (tab === "favorite") return d.isFavorite;
+    .filter((_, idx) => {
+      if (tab === "favorite") return docs[idx]?.isFavorite;
       if (tab === "recent") return idx < 4;
       return true;
     });
@@ -66,24 +296,95 @@ function DocumentsPanel({ docs, patientId }: { docs: any[]; patientId: string })
           </p>
         </div>
 
-        <div>
+        <div className="flex items-center gap-3">
+          {(uploading || extracting) && (
+            <span className="text-xs text-slate-500">
+              {uploading ? "Uploading…" : "Indexing in Qdrant…"}
+            </span>
+          )}
+
           <button
             type="button"
             onClick={handleImportClick}
-            className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-600"
+            disabled={uploading || extracting}
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-600 disabled:opacity-60"
           >
             <UploadCloud className="h-4 w-4" />
             Import a doc
           </button>
 
-          {/* hidden file input */}
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
       </div>
 
-      {/* Tabs + search */}
+      {uploadError && (
+        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {uploadError}
+        </div>
+      )}
+
+      {/* Semantic Search */}
+      <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm font-semibold text-slate-900">Semantic search</div>
+            <div className="text-xs text-slate-500">
+              Searches inside indexed documents (Qdrant).
+            </div>
+          </div>
+
+          <div className="flex w-full gap-2 sm:w-[520px]">
+            <input
+              className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              placeholder="Ask something… (e.g. hypertension, allergies, MRI)"
+              value={semanticQ}
+              onChange={(e) => setSemanticQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  runSemanticSearch();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={runSemanticSearch}
+              disabled={searching}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-60"
+            >
+              <Search className="h-4 w-4" />
+              {searching ? "Searching…" : "Search"}
+            </button>
+          </div>
+        </div>
+
+        {searchError && (
+          <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {searchError}
+          </div>
+        )}
+
+        {searchHits.length > 0 && (
+          <div className="mt-4 grid gap-3">
+            {searchHits.slice(0, 10).map((h, idx) => (
+              <ResultCard key={h.id} hit={h} isBest={idx === 0} />
+            ))}
+          </div>
+        )}
+
+        {searchHits.length === 0 && semanticQ.trim() !== "" && !searching && !searchError && (
+          <div className="mt-3 text-sm text-slate-500">No semantic results.</div>
+        )}
+      </div>
+
+      {/* Tabs + local title search */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Tabs */}
         <div className="inline-flex rounded-full bg-slate-100 p-1 text-xs font-medium text-slate-500">
           <button
             type="button"
@@ -117,18 +418,17 @@ function DocumentsPanel({ docs, patientId }: { docs: any[]; patientId: string })
           </button>
         </div>
 
-        {/* Search */}
         <div className="relative w-full sm:max-w-xs">
           <input
             className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            placeholder="Search in documents…"
+            placeholder="Filter by title…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Cards */}
+      {/* Document cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((doc) => (
           <article
@@ -143,9 +443,9 @@ function DocumentsPanel({ docs, patientId }: { docs: any[]; patientId: string })
             </div>
 
             <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
-              <span>{doc.date}</span>
+              <span>{formatDocDate(doc.date)}</span>
               <div className="flex items-center gap-2">
-               <button
+                <button
                   type="button"
                   onClick={() => window.open(`/api/patients/${patientId}/documents/${doc.id}`, "_blank")}
                   className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-100"
@@ -182,8 +482,8 @@ function DocumentsPanel({ docs, patientId }: { docs: any[]; patientId: string })
 export default function PatientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
 
-  const [patient, setPatient] = useState<any>(null);
-  const [docs, setDocs] = useState<any[]>([]);
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [docs, setDocs] = useState<PatientDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -196,17 +496,15 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
           setLoading(false);
           return;
         }
-
-        const { patient, documents } = await res.json();
-        setPatient(patient);
-        setDocs(documents || []);
+        const json = await res.json();
+        setPatient(json.patient as Patient);
+        setDocs((json.documents ?? []) as PatientDoc[]);
       } catch (error) {
         console.error("Failed to load patient", error);
       } finally {
         setLoading(false);
       }
     }
-
     loadData();
   }, [id]);
 
@@ -228,12 +526,13 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
     );
   }
 
-  const initials = patient.name
-    ?.split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials =
+    patient.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ?? "P";
 
   const meta = buildPatientMeta(patient);
 
@@ -251,7 +550,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
             </div>
             <h2 className="text-lg font-semibold text-slate-900">{patient.name}</h2>
 
-            <p className="mt-1 text-xs text-slate-500">{patient.email}</p>
+            <p className="mt-1 text-xs text-slate-500">{patient.email ?? ""}</p>
             {patient.phone && <p className="mt-1 text-xs text-slate-500">{patient.phone}</p>}
 
             {patient.idnum && (
@@ -305,7 +604,7 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
         </div>
 
         {/* Documents section */}
-        <DocumentsPanel docs={docs} patientId={id} />
+        <DocumentsPanel docs={docs} setDocs={setDocs} patientId={id} />
       </section>
     </main>
   );

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function POST(req: Request, ctx: any) {
-  const { params } = ctx;
+  const params = await ctx.params;
   try {
     const formData = await req.formData();
 

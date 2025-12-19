@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function GET(_req: Request, ctx: any) {
-  const { params } = ctx;
+  const params = await ctx.params;
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   try {
     // ✅ Fetch patient
@@ -38,7 +38,7 @@ export async function GET(_req: Request, ctx: any) {
 }
 
 export async function PUT(req: Request, ctx: any) {
-  const { params } = ctx;
+  const params = await ctx.params;
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   try {
     const data = await req.json();
