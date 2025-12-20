@@ -35,7 +35,6 @@ export default function Sidebar() {
   // Close drawer when route changes (mobile UX)
   useEffect(() => {
     setIsOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
   // Prevent body scroll when drawer is open (mobile)
@@ -62,7 +61,7 @@ export default function Sidebar() {
       {/* Mobile overlay */}
       <div
         className={[
-          "fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden",
+          "fixed inset-0 z-[9998] bg-black/50 transition-opacity md:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0",
         ].join(" ")}
         onClick={() => setIsOpen(false)}
@@ -72,8 +71,8 @@ export default function Sidebar() {
       {/* Sidebar / Drawer */}
       <aside
         className={[
-          // IMPORTANT: flex on ALL breakpoints (this was your bug)
-          "fixed md:static top-0 left-0 z-50 h-dvh w-72 md:w-60",
+          // flex on ALL breakpoints
+          "fixed md:static top-0 left-0 z-[9999] h-dvh w-72 md:w-60",
           "flex flex-col gap-4 p-4",
           "bg-white border-r border-gray-100 shadow-lg md:shadow-none",
           "transform transition-transform duration-300 ease-in-out",
@@ -87,18 +86,16 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          className="md:hidden absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-100"
+          className="md:hidden absolute right-4 top-[calc(env(safe-area-inset-top)+12px)] p-2 rounded-lg hover:bg-gray-100"
           aria-label="Close menu"
         >
           <X size={20} />
         </button>
 
         {/* Brand */}
-        <div className="px-2 pt-1 md:pt-0">
+        <div className="px-2 pt-[calc(env(safe-area-inset-top)+4px)] md:pt-0">
           <div className="text-xl font-bold text-brand">{SITE_NAME}</div>
-          <div className="mt-1 text-xs text-gray-500 md:hidden">
-            Navigation
-          </div>
+          <div className="mt-1 text-xs text-gray-500 md:hidden">Navigation</div>
         </div>
 
         {/* Nav */}
@@ -156,19 +153,14 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile menu button */}
+      {/* Mobile menu button (must be ABOVE Topbar) */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-white shadow-md border border-gray-200"
+        className="md:hidden fixed z-[10000] left-3 top-[calc(env(safe-area-inset-top)+12px)] p-2 rounded-lg bg-white shadow-md border border-gray-200"
         aria-label="Open menu"
       >
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

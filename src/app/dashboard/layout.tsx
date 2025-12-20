@@ -6,17 +6,13 @@ import { authOptions } from "@/lib/auth";
 import Sidebar from "@/components/Sidebar";
 
 export default async function DashLayout({ children }: { children: ReactNode }) {
-  // Block unauthenticated access to anything under /dashboard/*
   const session = await getServerSession(authOptions);
-  if (!session) {
-    redirect("/signin"); // keep this path consistent with authOptions.pages.signIn
-  }
+  if (!session) redirect("/signin");
 
   return (
-    <div className="min-h-dvh flex">
+    <div className="min-h-dvh md:flex">
       <Sidebar />
-      <div className="flex-1 md:ml-0">{children}</div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
-
