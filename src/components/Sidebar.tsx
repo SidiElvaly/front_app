@@ -61,7 +61,7 @@ export default function Sidebar() {
       {/* Mobile overlay */}
       <div
         className={[
-          "fixed inset-0 z-[9998] bg-black/50 transition-opacity md:hidden",
+          "fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden",
           isOpen ? "opacity-100" : "pointer-events-none opacity-0",
         ].join(" ")}
         onClick={() => setIsOpen(false)}
@@ -71,102 +71,105 @@ export default function Sidebar() {
       {/* Sidebar / Drawer */}
       <aside
         className={[
-          // flex on ALL breakpoints
-          "fixed md:static top-0 left-0 z-[9999] h-dvh w-72 md:w-60",
-          "flex flex-col gap-4 p-4",
+          "fixed md:static top-0 left-0 z-50 h-dvh w-72 md:w-60",
+          "flex flex-col",
           "bg-white border-r border-gray-100 shadow-lg md:shadow-none",
           "transform transition-transform duration-300 ease-in-out",
-          // Drawer behavior on mobile
           isOpen ? "translate-x-0" : "-translate-x-full",
-          // Always visible on md+
           "md:translate-x-0",
         ].join(" ")}
       >
-        {/* Close button for mobile */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(false)}
-          className="md:hidden absolute right-4 top-[calc(env(safe-area-inset-top)+12px)] p-2 rounded-lg hover:bg-gray-100"
-          aria-label="Close menu"
-        >
-          <X size={20} />
-        </button>
+        {/* ✅ Drawer header (mobile-safe): reserves space so the hamburger never overlaps the logo */}
+        <div className="flex items-center justify-between px-4 pt-4">
+          {/* On mobile, push logo right to avoid the fixed hamburger at left */}
+          <div className="pl-14 md:pl-0">
+            <div className="text-xl font-bold text-brand">{SITE_NAME}</div>
+            <div className="mt-1 text-xs text-gray-500 md:hidden">Navigation</div>
+          </div>
 
-        {/* Brand */}
-        <div className="px-2 pt-[calc(env(safe-area-inset-top)+4px)] md:pt-0">
-          <div className="text-xl font-bold text-brand">{SITE_NAME}</div>
-          <div className="mt-1 text-xs text-gray-500 md:hidden">Navigation</div>
+          {/* Close button (mobile) */}
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100"
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex flex-col gap-1">
-          {items.map(({ href, label, icon: Icon }) => {
-            const isDashboard = href === "/dashboard";
-            const active = isDashboard
-              ? path === "/dashboard"
-              : path === href || path.startsWith(href + "/");
+        {/* Content */}
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          {/* Nav */}
+          <nav className="flex flex-col gap-1">
+            {items.map(({ href, label, icon: Icon }) => {
+              const isDashboard = href === "/dashboard";
+              const active = isDashboard
+                ? path === "/dashboard"
+                : path === href || path.startsWith(href + "/");
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={[
-                  "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
-                  active
-                    ? "bg-emerald-50 text-emerald-700 shadow-sm"
-                    : "text-gray-600 hover:bg-gray-50",
-                ].join(" ")}
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setIsOpen(false)}
+                  className={[
+                    "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
+                    active
+                      ? "bg-emerald-50 text-emerald-700 shadow-sm"
+                      : "text-gray-600 hover:bg-gray-50",
+                  ].join(" ")}
+                >
+                  <Icon size={18} />
+                  <span className="truncate">{label}</span>
+                </Link>
+              );
+            })}
+
+            {status === "authenticated" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  signOut({ callbackUrl: SIGNIN_PATH });
+                }}
+                className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
               >
-                <Icon size={18} />
-                <span className="truncate">{label}</span>
+                <LogOut size={18} />
+                <span className="truncate">Sign Out</span>
+              </button>
+            ) : (
+              <Link
+                href={SIGNIN_PATH}
+                onClick={() => setIsOpen(false)}
+                className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                <LogIn size={18} />
+                <span className="truncate">Sign In</span>
               </Link>
-            );
-          })}
+            )}
+          </nav>
 
-          {status === "authenticated" ? (
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: SIGNIN_PATH })}
-              className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
-            >
-              <LogOut size={18} />
-              <span className="truncate">Sign Out</span>
-            </button>
-          ) : (
-            <Link
-              href={SIGNIN_PATH}
-              className="mt-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
-            >
-              <LogIn size={18} />
-              <span className="truncate">Sign In</span>
-            </Link>
-          )}
-        </nav>
-
-        {/* Footer card */}
-        <div className="mt-auto card p-4">
-          <div className="text-sm font-medium mb-1">Need help?</div>
-          <p className="text-xs text-gray-500 mb-3">Please check our docs</p>
-          <a className="btn w-full" href="#">
-            DOCUMENTATION
-          </a>
+          {/* Footer card */}
+          <div className="mt-auto card p-4">
+            <div className="text-sm font-medium mb-1">Need help?</div>
+            <p className="text-xs text-gray-500 mb-3">Please check our docs</p>
+            <a className="btn w-full" href="#">
+              DOCUMENTATION
+            </a>
+          </div>
         </div>
       </aside>
 
-      {/* Mobile menu button (must be ABOVE Topbar) */}
+      {/* Mobile menu button */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed z-[10000] left-3 top-[calc(env(safe-area-inset-top)+12px)] p-2 rounded-lg bg-white shadow-md border border-gray-200"
+        className="md:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-white shadow-md border border-gray-200"
         aria-label="Open menu"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
     </>
