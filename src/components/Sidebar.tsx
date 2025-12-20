@@ -165,7 +165,8 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-30 p-2 rounded-lg bg-white shadow-md border border-gray-200"
+        className="md:hidden fixed top-4 left-4 z-[60] p-2 rounded-lg bg-white shadow-md border border-gray-200"
+
         aria-label="Open menu"
       >
         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
