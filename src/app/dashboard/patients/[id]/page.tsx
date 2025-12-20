@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState, use as usePromise } from "react";
 import Topbar from "@/components/Topbar";
-import { FileText, Star, StarOff, UploadCloud, Search } from "lucide-react";
+import { FileText, Star, StarOff, UploadCloud, Search, Trash2 } from "lucide-react";
 
 /* ----------------- Types (no any) ----------------- */
 type Patient = {
@@ -114,13 +114,7 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
-function ResultCard({
-  hit,
-  isBest,
-}: {
-  hit: SearchHit;
-  isBest?: boolean;
-}) {
+function ResultCard({ hit, isBest }: { hit: SearchHit; isBest?: boolean }) {
   const pct = scoreToPercent(hit.score);
   const meta = extractMetaFromText(hit.text);
 
@@ -128,9 +122,7 @@ function ResultCard({
     <article
       className={[
         "rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md",
-        isBest
-          ? "border-2 border-emerald-400 ring-2 ring-emerald-100"
-          : "border border-slate-100",
+        isBest ? "border-2 border-emerald-400 ring-2 ring-emerald-100" : "border border-slate-100",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3">
@@ -148,20 +140,14 @@ function ResultCard({
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
             {meta.status && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                Status: {meta.status}
-              </span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">Status: {meta.status}</span>
             )}
             {meta.firstMention && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                First: {meta.firstMention}
-              </span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">First: {meta.firstMention}</span>
             )}
             {(meta.lastConsult || meta.diagnosisDate) && (
               <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                {meta.lastConsult
-                  ? `Last consult: ${meta.lastConsult}`
-                  : `Diagnosis: ${meta.diagnosisDate}`}
+                {meta.lastConsult ? `Last consult: ${meta.lastConsult}` : `Diagnosis: ${meta.diagnosisDate}`}
               </span>
             )}
           </div>
@@ -216,8 +202,9 @@ function DocumentsPanel({
   const [searchHits, setSearchHits] = useState<SearchHit[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleImportClick = () => fileInputRef.current?.click();
 
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
@@ -277,10 +264,32 @@ function DocumentsPanel({
     }
   }
 
+  async function deleteDoc(docId: string) {
+    const ok = confirm("Delete this document?");
+    if (!ok) return;
+
+    setUploadError(null);
+    setDeletingId(docId);
+
+    try {
+      const res = await fetch(`/api/patients/${patientId}/documents/${docId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      setDocs((prev) => prev.filter((d) => d.id !== docId));
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const filtered = docs
     .filter((d) => d.title.toLowerCase().includes(query.trim().toLowerCase()))
-    .filter((_, idx) => {
-      if (tab === "favorite") return docs[idx]?.isFavorite;
+    .filter((d, idx) => {
+      if (tab === "favorite") return d.isFavorite;
       if (tab === "recent") return idx < 4;
       return true;
     });
@@ -334,9 +343,7 @@ function DocumentsPanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-sm font-semibold text-slate-900">Semantic search</div>
-            <div className="text-xs text-slate-500">
-              Searches inside indexed documents (Qdrant).
-            </div>
+            <div className="text-xs text-slate-500">Searches inside indexed documents (Qdrant).</div>
           </div>
 
           <div className="flex w-full gap-2 sm:w-[520px]">
@@ -391,7 +398,9 @@ function DocumentsPanel({
             onClick={() => setTab("favorite")}
             className={
               "rounded-full px-3 py-1 transition " +
-              (tab === "favorite" ? "bg-white text-emerald-600 shadow-sm" : "hover:text-slate-700")
+              (tab === "favorite"
+                ? "bg-white text-emerald-600 shadow-sm"
+                : "hover:text-slate-700")
             }
           >
             Favorite
@@ -444,14 +453,29 @@ function DocumentsPanel({
 
             <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
               <span>{formatDocDate(doc.date)}</span>
+
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.open(`/api/patients/${patientId}/documents/${doc.id}`, "_blank")}
+                  onClick={() =>
+                    window.open(`/api/patients/${patientId}/documents/${doc.id}`, "_blank")
+                  }
                   className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-100"
                 >
                   View
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => deleteDoc(doc.id)}
+                  disabled={deletingId === doc.id}
+                  className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+                  title="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {deletingId === doc.id ? "Deleting…" : "Delete"}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => alert("TODO: toggle favorite")}
