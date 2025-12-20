@@ -84,11 +84,6 @@ DATABASE_URL="mongodb://127.0.0.1:27017/sanamed?replicaSet=rs0"
 npx prisma generate
 ```
 
-### (Optional) View Database Structure
-
-```bash
-npx prisma studio
-```
 
 ---
 
