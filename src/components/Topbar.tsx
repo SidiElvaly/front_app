@@ -17,7 +17,7 @@ export default function Topbar({ title }: { title: string }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur">
-      <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-6">
+      <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-6 pl-16 md:pl-6">
         {/* Left side */}
         <div className="flex flex-1 items-center gap-4 min-w-0">
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-emerald-600">

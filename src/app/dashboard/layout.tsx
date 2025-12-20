@@ -14,10 +14,8 @@ export default async function DashLayout({ children }: { children: ReactNode }) 
 
   return (
     <div className="min-h-dvh flex">
-      <div className="bg-transparent md:bg-transparent md:border-r md:border-gray-100">
-        <Sidebar />
-      </div>
-      <div className="flex-1">{children}</div>
+      <Sidebar />
+      <div className="flex-1 md:ml-0">{children}</div>
     </div>
   );
 }

@@ -1,12 +1,18 @@
 // src/app/layout.tsx
 import "@/styles/globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Providers from "./providers";
 import { SITE_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: SITE_NAME,
   description: "Medical admin UI",
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
