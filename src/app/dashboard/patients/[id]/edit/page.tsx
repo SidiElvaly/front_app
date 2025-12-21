@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, FormEvent , use as usePromise} from "react";
+import { useEffect, useState, useRef, FormEvent, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import Topbar from "@/components/Topbar";
 import {
@@ -16,10 +16,13 @@ import {
   X,
 } from "lucide-react";
 
-export default function EditPatientPage( { params }: { params: Promise<{ id: string }> }) {
-
+export default function EditPatientPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
-    const { id } = usePromise(params);
+  const { id } = usePromise(params);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,18 +32,17 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
   const [gender, setGender] = useState<"male" | "female" | "other" | "">("");
   const [dob, setDob] = useState("");
   const [address, setAddress] = useState("");
-   const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("");
   const [notes, setNotes] = useState("");
 
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
-  // ✅ Load patient data
   useEffect(() => {
     async function fetchPatient() {
       try {
-        const res = await fetch(`/api/patients/${id}`);
+        const res = await fetch(`/api/patients/${id}`, { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load patient");
         const data = await res.json();
         const patient = data.patient;
@@ -55,10 +57,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
         setAddress(patient.address || "");
         setStatus(patient.status || "");
         setNotes(patient.notes || "");
-
-
-
-      } catch (err) {
+      } catch {
         alert("Failed to load patient");
       } finally {
         setLoading(false);
@@ -82,11 +81,8 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleCancel = () => {
-    router.push("/dashboard/patients");
-  };
+  const handleCancel = () => router.push("/dashboard/patients");
 
-  // ✅ Submit update (PUT)
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -137,13 +133,13 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
       <section className="px-3 pb-10 pt-4 sm:px-4 lg:px-6">
         <div className="card overflow-hidden border border-slate-100 shadow-card">
           {/* Header */}
-          <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
+          <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-4 py-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
                 <UserPlus className="h-4 w-4" />
               </span>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+              <div className="min-w-0">
+                <h2 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
                   Edit patient
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -152,11 +148,12 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            {/* Buttons: full-width on mobile, inline on sm+ */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50 sm:w-auto sm:py-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Cancel
@@ -164,7 +161,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
               <button
                 type="submit"
                 form="edit-patient-form"
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-1.5 text-xs font-semibold text-white shadow-md hover:bg-emerald-600"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-xs font-semibold text-white shadow-md hover:bg-emerald-600 sm:w-auto sm:py-1.5"
               >
                 Save changes
               </button>
@@ -175,7 +172,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
           <form
             id="edit-patient-form"
             onSubmit={handleSubmit}
-            className="grid gap-8 px-6 py-6 lg:grid-cols-[minmax(0,2fr),minmax(260px,1fr)]"
+            className="grid gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,2fr),minmax(260px,1fr)] lg:gap-8"
           >
             {/* Left column */}
             <div className="space-y-6">
@@ -191,7 +188,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     </span>
                     <input
                       type="text"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
@@ -210,7 +207,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     </span>
                     <input
                       type="email"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
@@ -228,7 +225,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     </span>
                     <input
                       type="tel"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
@@ -246,7 +243,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     </span>
                     <input
                       type="text"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       value={enrollNumber}
                       onChange={(e) => setEnrollNumber(e.target.value)}
                     />
@@ -262,7 +259,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     Gender
                   </label>
                   <select
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={gender}
                     onChange={(e) => setGender(e.target.value as any)}
                   >
@@ -284,7 +281,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     </span>
                     <input
                       type="date"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
                     />
@@ -302,7 +299,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     </span>
                     <input
                       type="date"
-                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                      className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                       value={lastVisit}
                       onChange={(e) => setLastVisit(e.target.value)}
                     />
@@ -321,29 +318,28 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                   </span>
                   <input
                     type="text"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
                 </div>
               </div>
 
-                <div className="space-y-1">
+              {/* Status */}
+              <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-600">
                   Status
                 </label>
-                <div className="relative">
-                  <select
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="">Select status</option>
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                  </select>
-                </div>
+                <select
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="">Select status</option>
+                  <option value="LOW">LOW</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                </select>
               </div>
 
               {/* Notes */}
@@ -356,7 +352,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     <FileText className="h-4 w-4" />
                   </span>
                   <textarea
-                    className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-9 py-2 text-sm"
+                    className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-9 py-2 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
@@ -364,17 +360,18 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
               </div>
             </div>
 
-            {/* Right column - avatar (still demo) */}
-            <div className="flex flex-col rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-6">
-              <p className="text-sm font-semibold text-slate-800 mb-3">Avatar</p>
+            {/* Right column: avatar (responsive) */}
+            <div className="flex flex-col rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 sm:px-6 sm:py-6">
+              <p className="mb-3 text-sm font-semibold text-slate-800">Avatar</p>
 
               <div className="flex flex-1 flex-col items-center justify-center">
                 <button
                   type="button"
                   onClick={handleAvatarClick}
-                  className="flex h-32 w-32 items-center justify-center rounded-full bg-white text-slate-300 shadow-sm hover:bg-slate-50"
+                  className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-slate-300 shadow-sm hover:bg-slate-50 sm:h-32 sm:w-32"
                 >
                   {avatarPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={avatarPreview}
                       alt="Preview"
@@ -385,15 +382,16 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                   )}
                 </button>
 
-                <p className="mt-3 text-xs text-slate-500 text-center max-w-[220px]">
+                <p className="mt-3 max-w-[260px] text-center text-xs text-slate-500">
                   Avatar upload coming soon.
                 </p>
 
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                {/* Buttons: full-width on mobile */}
+                <div className="mt-4 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3">
                   <button
                     type="button"
                     onClick={handleAvatarClick}
-                    className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-medium text-white shadow-md hover:bg-emerald-600"
+                    className="w-full rounded-full bg-emerald-500 px-4 py-2 text-xs font-medium text-white shadow-md hover:bg-emerald-600 sm:w-auto sm:py-1.5"
                   >
                     Choose photo
                   </button>
@@ -401,7 +399,7 @@ export default function EditPatientPage( { params }: { params: Promise<{ id: str
                     <button
                       type="button"
                       onClick={handleRemoveAvatar}
-                      className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                      className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50 sm:w-auto sm:py-1.5"
                     >
                       Remove
                     </button>
