@@ -2,17 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
-import {
-  Apple,
-  Facebook,
-  Mail,
-  Lock,
-  ShieldCheck,
-  ChevronRight,
-} from "lucide-react";
+import { Apple, Facebook, Mail, Lock, ShieldCheck, ChevronRight } from "lucide-react";
 
 /* ---------- Decorative Helpers ---------- */
-
 function WaveTexture() {
   return (
     <svg
@@ -115,7 +107,6 @@ function TinySwitch({
 }
 
 /* ---------- Page (client) ---------- */
-
 export default function SignInClient({
   callbackUrl,
   error,
@@ -157,36 +148,38 @@ export default function SignInClient({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-5xl">
-        {/* Gradient hero */}
-        <div className="relative mb-10 rounded-3xl bg-gradient-to-r from-emerald-400 via-[#3EC6B7] to-emerald-500 p-8 sm:p-10 shadow-[0_18px_45px_rgba(15,23,42,0.35)] overflow-hidden">
+    // ✅ Mobile-safe height + safe padding + no sideways overflow
+    <main className="min-h-dvh bg-slate-50 px-4 py-8 sm:py-10">
+      <div className="mx-auto w-full max-w-5xl">
+        {/* ✅ Hero: smaller on mobile, more compact paddings, still centered */}
+        <div className="relative mb-6 sm:mb-10 rounded-3xl bg-gradient-to-r from-emerald-400 via-[#3EC6B7] to-emerald-500 p-5 sm:p-10 shadow-[0_18px_45px_rgba(15,23,42,0.35)] overflow-hidden">
           <WaveTexture />
 
           <div className="relative flex flex-col items-center text-center gap-2 text-white">
-            <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+            <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em]">
               <span className="mr-2 h-2 w-2 rounded-full bg-emerald-300" />
-              SANAMED 
+              SANAMED
             </span>
-            <h1 className="text-2xl sm:text-3xl font-semibold">
+
+            <h1 className="text-xl sm:text-3xl font-semibold leading-tight">
               Welcome back!
             </h1>
-            <p className="max-w-xl text-xs sm:text-sm text-emerald-50/90">
-              Sign in to access your SanaMed dashboard, manage patients, and
-              track appointments.
+
+            <p className="max-w-xl text-[11px] sm:text-sm text-emerald-50/90">
+              Sign in to access your SanaMed dashboard, manage patients, and track appointments.
             </p>
           </div>
         </div>
 
-        {/* Auth card */}
-        <div className="mx-auto max-w-xl rounded-3xl bg-white/95 shadow-[0_18px_45px_rgba(15,23,42,0.16)] border border-slate-100">
-          <div className="px-6 pt-6 pb-2 sm:px-8 sm:pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+        {/* ✅ Card: full width on mobile, fixed max on larger screens */}
+        <div className="mx-auto w-full max-w-xl rounded-3xl bg-white/95 shadow-[0_18px_45px_rgba(15,23,42,0.16)] border border-slate-100">
+          <div className="px-4 pt-5 pb-2 sm:px-8 sm:pt-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-semibold text-slate-900">
                   Sign in to your account
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-[11px] sm:text-xs text-slate-500">
                   Use your work email and password.{" "}
                   <span className="text-emerald-600 font-medium">
                     It only takes a moment.
@@ -199,10 +192,10 @@ export default function SignInClient({
             </div>
 
             {/* Social row */}
-            <p className="mt-6 text-center text-[11px] text-gray-500">
+            <p className="mt-5 sm:mt-6 text-center text-[11px] text-gray-500">
               Sign in with
             </p>
-            <div className="mt-3 flex items-center justify-center gap-3">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
               <SocialButton
                 label="Sign in with Facebook"
                 onClick={() => oauth("facebook")}
@@ -261,6 +254,7 @@ export default function SignInClient({
                   className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-900 outline-none shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500"
                   required
                   autoComplete="email"
+                  inputMode="email"
                 />
               </div>
 
@@ -276,7 +270,7 @@ export default function SignInClient({
                     placeholder="Your password"
                     value={pwd}
                     onChange={(e) => setPwd(e.target.value)}
-                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 pr-9 text-[13px] text-slate-900 outline-none shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500"
+                    className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 pr-14 text-[13px] text-slate-900 outline-none shadow-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500"
                     required
                     autoComplete="current-password"
                   />
@@ -290,16 +284,12 @@ export default function SignInClient({
                 </div>
               </div>
 
-              {/* Remember / Forgot */}
-              <div className="flex items-center justify-between text-[11px] text-slate-500">
-                <TinySwitch
-                  checked={remember}
-                  onChange={setRemember}
-                  label="Remember me"
-                />
+              {/* Remember / Forgot (stack on very small screens) */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-[11px] text-slate-500">
+                <TinySwitch checked={remember} onChange={setRemember} label="Remember me" />
                 <button
                   type="button"
-                  className="text-emerald-600 font-medium hover:text-emerald-700"
+                  className="text-emerald-600 font-medium hover:text-emerald-700 text-left sm:text-right"
                 >
                   Forgot password?
                 </button>
@@ -316,8 +306,7 @@ export default function SignInClient({
               </button>
             </form>
 
-            {/* Small footer text */}
-            <p className="mt-4 mb-6 text-[11px] text-center text-slate-400">
+            <p className="mt-4 mb-6 text-[11px] text-center text-slate-400 px-2">
               Don&apos;t have an account yet?{" "}
               <span className="text-emerald-600 font-medium hover:underline cursor-pointer">
                 Contact the clinic administrator
