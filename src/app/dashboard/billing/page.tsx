@@ -2,15 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Topbar from "@/components/Topbar";
-import {
-  CalendarDays,
-  DollarSign,
-  CreditCard,
-  Search as SearchIcon,
-} from "lucide-react";
+import { CalendarDays, DollarSign, CreditCard } from "lucide-react";
 
 /* ---------- Types ---------- */
-
 type Invoice = {
   id: string;
   amount: number;
@@ -20,18 +14,19 @@ type Invoice = {
 };
 
 /* ---------- Status Badge ---------- */
-
 function StatusBadge({ value }: { value: Invoice["status"] }) {
   const map = {
     PAID: {
       class: "bg-emerald-50 text-emerald-700 border-emerald-200",
       icon: "✓",
+      label: "Paid",
     },
     PENDING: {
       class: "bg-amber-50 text-amber-700 border-amber-200",
       icon: "⏱",
+      label: "Pending",
     },
-  };
+  } as const;
 
   const config = map[value];
 
@@ -40,31 +35,24 @@ function StatusBadge({ value }: { value: Invoice["status"] }) {
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border ${config.class}`}
     >
       <span className="text-xs">{config.icon}</span>
-      {value === "PAID" ? "Paid" : "Pending"}
+      {config.label}
     </span>
   );
 }
 
 /* ---------- Page ---------- */
-
 export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | Invoice["status"]>("ALL");
 
-  // ✅ Fetch invoices from DB
   useEffect(() => {
     async function loadInvoices() {
       try {
-        const res = await fetch("/api/invoices");
+        const res = await fetch("/api/invoices", { cache: "no-store" });
         const data = await res.json();
-
-        if (Array.isArray(data)) {
-          setInvoices(data);
-        } else {
-          setInvoices([]);
-        }
+        setInvoices(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching invoices:", err);
         setInvoices([]);
@@ -72,25 +60,25 @@ export default function BillingPage() {
         setLoading(false);
       }
     }
-
     loadInvoices();
   }, []);
 
-  // ✅ REAL DATA: Sum of PAID invoices
   const totalPaid = useMemo(() => {
     return invoices
       .filter((inv) => inv.status === "PAID")
       .reduce((sum, inv) => sum + inv.amount, 0);
   }, [invoices]);
 
-  // ✅ Search & filter
-  const filtered = invoices.filter((inv) => {
-    const matchesSearch =
-      search.trim() === "" ||
-      inv.id.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || inv.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const latest = invoices[0] ?? null;
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    return invoices.filter((inv) => {
+      const matchesSearch = s === "" || inv.id.toLowerCase().includes(s);
+      const matchesStatus = statusFilter === "ALL" || inv.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [invoices, search, statusFilter]);
 
   if (loading) {
     return (
@@ -105,16 +93,15 @@ export default function BillingPage() {
     <main className="w-full">
       <Topbar title="Billing" />
 
-      <section className="px-3 sm:px-4 lg:px-6">
+      <section className="px-3 pb-8 sm:px-4 lg:px-6">
         <p className="mt-1 mb-6 text-sm text-gray-600">
           Review your billing history and account details.
         </p>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          
-          {/* ✅ REAL TOTAL PAID */}
-          <div className="card p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
+        {/* Summary Cards: 1 col mobile, 2 col sm, 3 col lg */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Total Paid */}
+          <div className="card p-4 sm:p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-600">Total Paid</span>
               <div className="p-2 bg-emerald-100 rounded-lg">
@@ -130,19 +117,21 @@ export default function BillingPage() {
           </div>
 
           {/* Latest Invoice */}
-          <div className="card p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
+          <div className="card p-4 sm:p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-600">Latest Invoice</span>
               <div className="p-2 bg-sky-100 rounded-lg">
                 <CalendarDays className="h-4 w-4 text-sky-600" />
               </div>
             </div>
+
             <div className="mt-3 text-2xl font-bold text-gray-900">
-              {invoices[0] ? `$${invoices[0].amount.toLocaleString()}` : "-"}
+              {latest ? `$${latest.amount.toLocaleString()}` : "-"}
             </div>
+
             <p className="mt-2 text-xs text-gray-500">
-              {invoices[0]
-                ? new Date(invoices[0].createdAt).toLocaleDateString("en-US", {
+              {latest
+                ? new Date(latest.createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
@@ -152,12 +141,12 @@ export default function BillingPage() {
           </div>
 
           {/* Payment Method */}
-          <div className="card p-0 overflow-hidden hover:shadow-md transition-shadow duration-200">
-            <div className="px-6 pt-4 pb-2 text-sm font-medium text-gray-600">
+          <div className="card p-0 overflow-hidden hover:shadow-md transition-shadow duration-200 sm:col-span-2 lg:col-span-1">
+            <div className="px-4 pt-4 pb-2 sm:px-6 text-sm font-medium text-gray-600">
               Payment Method
             </div>
-            <div className="px-6 pb-4">
-              <div className="h-32 w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg p-4 flex flex-col justify-between">
+            <div className="px-4 pb-4 sm:px-6">
+              <div className="h-auto w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg p-4 flex flex-col justify-between">
                 <div className="flex items-center justify-between text-xs uppercase tracking-wide">
                   <div className="flex items-center gap-2">
                     <CreditCard className="w-4 h-4" />
@@ -165,43 +154,47 @@ export default function BillingPage() {
                   </div>
                   <span className="text-sm font-bold">VISA</span>
                 </div>
-                <div className="text-lg font-bold tracking-widest">
+
+                <div className="mt-5 text-lg font-bold tracking-widest break-words">
                   •••• •••• •••• 4242
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <div>
+
+                <div className="mt-5 flex flex-col gap-2 text-xs sm:flex-row sm:items-end sm:justify-between">
+                  <div className="min-w-0">
                     <span className="text-white/80">Card holder</span>
-                    <div className="font-semibold">Sidi El Valy</div>
+                    <div className="font-semibold truncate">Sidi El Valy</div>
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right">
                     <span className="text-white/80">Expires</span>
                     <div className="font-semibold">08 / 27</div>
                   </div>
                 </div>
               </div>
+
+              <p className="mt-3 text-[11px] text-gray-500">
+                * Demo card UI only (no real payment processing).
+              </p>
             </div>
           </div>
-
         </div>
 
-        {/* Header + Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-          <div>
+        {/* Header + Controls: stack on mobile */}
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
             <h2 className="text-lg font-semibold text-gray-900">Invoice History</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-500">
               {filtered.length} invoice{filtered.length !== 1 ? "s" : ""} found
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-
+          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
             {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) =>
                 setStatusFilter(e.target.value as "ALL" | Invoice["status"])
               }
-              className="input text-sm cursor-pointer"
+              className="input text-sm cursor-pointer w-full sm:w-44"
             >
               <option value="ALL">All Status</option>
               <option value="PAID">Paid</option>
@@ -218,9 +211,56 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Invoice Table */}
+        {/* Mobile-first list + Desktop table */}
         <div className="card p-0 overflow-hidden hover:shadow-md transition-shadow duration-200">
-          <div className="overflow-x-auto">
+          {/* Mobile cards */}
+          <div className="divide-y divide-gray-100 lg:hidden">
+            {filtered.map((inv) => (
+              <div key={inv.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 break-all">
+                      {inv.id}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      Date:{" "}
+                      {new Date(inv.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      Due:{" "}
+                      {inv.dueDate
+                        ? new Date(inv.dueDate).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "-"}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <div className="text-sm font-semibold text-gray-900">
+                      ${inv.amount.toLocaleString()}
+                    </div>
+                    <StatusBadge value={inv.status} />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {filtered.length === 0 && (
+              <div className="px-6 py-12 text-center text-gray-500">
+                No invoices found.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 border-b border-gray-200">
@@ -233,13 +273,8 @@ export default function BillingPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filtered.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="hover:bg-gray-50 transition-colors duration-150 group"
-                  >
-                    <td className="px-6 py-4 font-semibold text-gray-900 group-hover:text-gray-700">
-                      {inv.id}
-                    </td>
+                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors duration-150">
+                    <td className="px-6 py-4 font-semibold text-gray-900">{inv.id}</td>
                     <td className="px-6 py-4 text-gray-600">
                       {new Date(inv.createdAt).toLocaleDateString("en-US", {
                         year: "numeric",
@@ -267,7 +302,7 @@ export default function BillingPage() {
 
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                       No invoices found.
                     </td>
                   </tr>
@@ -276,7 +311,6 @@ export default function BillingPage() {
             </table>
           </div>
         </div>
-
       </section>
     </main>
   );
