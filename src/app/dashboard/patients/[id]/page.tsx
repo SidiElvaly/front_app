@@ -342,7 +342,7 @@ function DocumentsPanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-slate-900">Semantic search</div>
-            <div className="text-xs text-slate-500">Searches inside indexed documents (Qdrant).</div>
+            <div className="text-xs text-slate-500"></div>
           </div>
 
           {/* responsive: stack on mobile */}
