@@ -112,14 +112,7 @@ Go to:
 
 ---
 
-## ✅ 8️⃣ Login Credentials (Demo)
 
-| Email | Password |
-|-------|----------|
-| sidielvaly@gmail.com | pass123 |
-| khatu@gmail.com | pass123 |
-
----
 
 ## ✅ 9️⃣ File Structure
 
