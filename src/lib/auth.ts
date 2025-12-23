@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
+  // ✅ IMPORTANT: required to encrypt/decrypt JWT sessions consistently
+  secret: process.env.NEXTAUTH_SECRET,
+
   session: { strategy: "jwt" },
 
   providers: [
@@ -16,22 +19,15 @@ export const authOptions: NextAuthOptions = {
       async authorize(creds) {
         if (!creds?.email || !creds?.password) return null;
 
-        // ✅ Get user from DB
         const user = await db.user.findUnique({
           where: { email: creds.email.toLowerCase() },
         });
 
         if (!user) return null;
 
-        // ✅ Compare hashed password
-        const isValid = await bcrypt.compare(
-          creds.password,
-          user.passwordHash
-        );
-
+        const isValid = await bcrypt.compare(creds.password, user.passwordHash);
         if (!isValid) return null;
 
-        // ✅ Return safe user
         return {
           id: user.id,
           name: user.name,
