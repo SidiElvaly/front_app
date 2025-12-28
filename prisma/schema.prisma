@@ -8,67 +8,129 @@ generator client {
 }
 
 model User {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String?
-  email       String   @unique
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String?
+  email        String   @unique
   passwordHash String
-  phone       String?
-  address     String?
-  image       String?
-  createdAt   DateTime @default(now())
+  phone        String?
+  address      String?
+  image        String?
+  createdAt    DateTime @default(now())
 }
+
 
 model Patient {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
   name      String
-  email     String
-  phone     String
-  idnum     String
+  email     String?      // ✅ optional (real world)
+  phone     String?      // ✅ optional
+  idnum     String?      // ✅ optional (MRN)
+
   lastVisit DateTime?
   dob       DateTime?
   address   String?
   notes     String?
   gender    String?
-  status    PatientStatus? @default(LOW)
-  createdAt DateTime       @default(now())
+  status    PatientStatus @default(LOW)
 
-  documents PatientDocument[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @default(now()) @updatedAt
+
+
+  documents   PatientDocument[]
+  admissions  Admission[]
+  appointments Appointment[]
+  invoices     Invoice[]
 }
 
 
-
 model PatientDocument {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  patientId String
-  title     String
-  date      DateTime
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  patientId  String   @db.ObjectId
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  title      String
+  date       DateTime
   isFavorite Boolean @default(false)
 
-  fileName  String
-  fileData  String   // Base64 PDF
+  
+  fileName   String
+  fileUrl    String?   // S3/R2/Cloudinary URL
+  mimeType   String?   // application/pdf
+  sizeBytes  Int?      // for UI/info
 
-  patient   Patient  @relation(fields: [patientId], references: [id])
+  
+  fileData   String?   // keep temporarily if you must migrate, remove later
+
+  createdAt  DateTime @default(now())
+  updatedAt DateTime? @default(now()) @updatedAt
+
+
+  @@index([patientId])
+}
+
+
+model Admission {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  patientId        String   @db.ObjectId
+  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  visitDate        DateTime
+  reason           String
+  currentDiagnosis String
+  medicalHistory   String?
+ 
+
+  createdByEmail   String?
+  createdAt        DateTime @default(now())
+  updatedAt DateTime? @default(now()) @updatedAt
+
+
+  @@index([patientId])
+  @@index([visitDate])
 }
 
 
 model Appointment {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
   patientId  String   @db.ObjectId
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
   date       DateTime
   room       String?
   type       AppointmentType
   status     AppointmentStatus @default(SCHEDULED)
+
   createdAt  DateTime @default(now())
+  updatedAt DateTime? @default(now()) @updatedAt
+
+
+  @@index([patientId])
+  @@index([date])
 }
+
 
 model Invoice {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
   patientId  String   @db.ObjectId
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
   amount     Float
   status     InvoiceStatus @default(PENDING)
   dueDate    DateTime?
   createdAt  DateTime @default(now())
+  updatedAt DateTime? @default(now()) @updatedAt
+
+
+  @@index([patientId])
+  @@index([createdAt])
 }
+
 
 enum PatientStatus {
   LOW

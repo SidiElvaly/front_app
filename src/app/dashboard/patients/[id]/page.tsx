@@ -3,7 +3,15 @@
 
 import React, { useEffect, useRef, useState, use as usePromise } from "react";
 import Topbar from "@/components/Topbar";
-import { FileText, Star, StarOff, UploadCloud, Search, Trash2 } from "lucide-react";
+import {
+  FileText,
+  Star,
+  StarOff,
+  UploadCloud,
+  Search,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 
 /* ----------------- Types (no any) ----------------- */
 type Patient = {
@@ -32,6 +40,20 @@ type PatientDoc = {
   fileName?: string;
 };
 
+type AdmissionStatus = "LOW" | "MEDIUM" | "HIGH";
+
+type Admission = {
+  id: string;
+  patientId: string;
+  visitDate: string; // ISO string from API
+  reason: string;
+  currentDiagnosis: string;
+  medicalHistory?: string | null;
+  status: AdmissionStatus;
+  createdAt: string;
+  createdByEmail?: string | null;
+};
+
 type SearchHit = {
   id: string;
   score: number;
@@ -55,6 +77,13 @@ function formatDocDate(d: PatientDoc["date"]) {
   const dt = typeof d === "string" ? new Date(d) : d;
   if (Number.isNaN(dt.getTime())) return String(d);
   return dt.toLocaleDateString();
+}
+
+function formatISODate(s?: string | null) {
+  if (!s) return "-";
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleDateString();
 }
 
 /* -------------------------- Proxy APIs (same domain, no CORS) -------------------------- */
@@ -92,9 +121,12 @@ function scoreToPercent(score: number) {
 }
 
 function extractMetaFromText(text: string) {
-  const firstMention = text.match(/Premi[eè]re mention:\s*([0-9-]+)/i)?.[1] ?? null;
-  const lastConsult = text.match(/Dernière consultation:\s*([0-9-]+)/i)?.[1] ?? null;
-  const diagnosisDate = text.match(/date diagnostic:\s*([0-9-]+)/i)?.[1] ?? null;
+  const firstMention =
+    text.match(/Premi[eè]re mention:\s*([0-9-]+)/i)?.[1] ?? null;
+  const lastConsult =
+    text.match(/Dernière consultation:\s*([0-9-]+)/i)?.[1] ?? null;
+  const diagnosisDate =
+    text.match(/date diagnostic:\s*([0-9-]+)/i)?.[1] ?? null;
   const status = text.match(/Statut:\s*([^.;\n]+)/i)?.[1]?.trim() ?? null;
 
   const title = text.split(":")[0]?.slice(0, 60)?.trim() || "Result";
@@ -103,7 +135,8 @@ function extractMetaFromText(text: string) {
 
 function ScoreBadge({ score }: { score: number }) {
   const pct = scoreToPercent(score);
-  const level = pct >= 80 ? "Excellent" : pct >= 65 ? "Good" : pct >= 50 ? "Medium" : "Low";
+  const level =
+    pct >= 80 ? "Excellent" : pct >= 65 ? "Good" : pct >= 50 ? "Medium" : "Low";
 
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
@@ -121,7 +154,9 @@ function ResultCard({ hit, isBest }: { hit: SearchHit; isBest?: boolean }) {
     <article
       className={[
         "rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md",
-        isBest ? "border-2 border-emerald-400 ring-2 ring-emerald-100" : "border border-slate-100",
+        isBest
+          ? "border-2 border-emerald-400 ring-2 ring-emerald-100"
+          : "border border-slate-100",
       ].join(" ")}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -132,20 +167,28 @@ function ResultCard({ hit, isBest }: { hit: SearchHit; isBest?: boolean }) {
                 Best match
               </span>
             )}
-            <p className="min-w-0 truncate text-sm font-semibold text-slate-900">{meta.title}</p>
+            <p className="min-w-0 truncate text-sm font-semibold text-slate-900">
+              {meta.title}
+            </p>
             <span className="text-[11px] text-slate-400">Hit: {hit.id}</span>
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
             {meta.status && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1">Status: {meta.status}</span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                Status: {meta.status}
+              </span>
             )}
             {meta.firstMention && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-1">First: {meta.firstMention}</span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                First: {meta.firstMention}
+              </span>
             )}
             {(meta.lastConsult || meta.diagnosisDate) && (
               <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                {meta.lastConsult ? `Last consult: ${meta.lastConsult}` : `Diagnosis: ${meta.diagnosisDate}`}
+                {meta.lastConsult
+                  ? `Last consult: ${meta.lastConsult}`
+                  : `Diagnosis: ${meta.diagnosisDate}`}
               </span>
             )}
           </div>
@@ -159,7 +202,11 @@ function ResultCard({ hit, isBest }: { hit: SearchHit; isBest?: boolean }) {
       <div className="mt-3">
         <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className={isBest ? "h-full rounded-full bg-emerald-600" : "h-full rounded-full bg-emerald-500"}
+            className={
+              isBest
+                ? "h-full rounded-full bg-emerald-600"
+                : "h-full rounded-full bg-emerald-500"
+            }
             style={{ width: `${pct}%` }}
             aria-label={`score ${pct}%`}
           />
@@ -174,9 +221,128 @@ function ResultCard({ hit, isBest }: { hit: SearchHit; isBest?: boolean }) {
         <summary className="cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900">
           View extracted passage
         </summary>
-        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{hit.text}</p>
+        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+          {hit.text}
+        </p>
       </details>
     </article>
+  );
+}
+
+/* -------------------------- Admissions section ------------------------- */
+function AdmissionsPanel({
+  admissions,
+  patientId,
+}: {
+  admissions: Admission[];
+  patientId: string;
+}) {
+  // ✅ Delete admission (API route must exist)
+  async function deleteAdmission(admissionId: string) {
+    const ok = confirm("Delete this admission?");
+    if (!ok) return;
+
+    try {
+      const res = await fetch(
+        `/api/patients/${patientId}/admissions/${admissionId}`,
+        { method: "DELETE" }
+      );
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Delete failed");
+
+      // simplest approach: reload page to refresh admissions
+      window.location.reload();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Delete failed");
+    }
+  }
+
+  return (
+    <section className="mt-6">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-slate-900">Admissions</h2>
+          <p className="text-xs text-slate-500">
+            Reception / admission history (updates patient file automatically).
+          </p>
+        </div>
+
+        <a
+          href={`/dashboard/patients/${patientId}/admissions`}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-600 sm:w-auto"
+        >
+          + New admission
+        </a>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {admissions.slice(0, 6).map((a) => (
+          <article
+            key={a.id}
+            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:shadow-md"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-slate-900">
+                  {a.currentDiagnosis}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Visit: {formatISODate(a.visitDate)}
+                </div>
+              </div>
+
+              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                {a.status}
+              </span>
+            </div>
+
+            <div className="mt-3 text-xs text-slate-700 line-clamp-3">
+              <span className="font-medium">Reason:</span> {a.reason}
+            </div>
+
+            {a.medicalHistory && (
+              <div className="mt-2 text-xs text-slate-500 line-clamp-2">
+                <span className="font-medium">History:</span> {a.medicalHistory}
+              </div>
+            )}
+
+            {a.createdByEmail && (
+              <div className="mt-3 text-[11px] text-slate-400">
+                By: {a.createdByEmail}
+              </div>
+            )}
+
+            {/* ✅ ACTIONS ROW (Edit + Delete) */}
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <a
+                href={`/dashboard/patients/${patientId}/admissions/${a.id}/edit`}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </a>
+
+              <button
+                type="button"
+                onClick={() => deleteAdmission(a.id)}
+                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-50"
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </button>
+            </div>
+          </article>
+        ))}
+
+        {admissions.length === 0 && (
+          <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+            No admissions yet. Create one to record diagnosis/history and update
+            the patient file immediately.
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -207,7 +373,9 @@ function DocumentsPanel({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handleImportClick = () => fileInputRef.current?.click();
 
-  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (
+    e
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -216,7 +384,6 @@ function DocumentsPanel({
     setExtracting(false);
 
     try {
-      // 1) Save in MongoDB via your Next route
       const formData = new FormData();
       formData.append("file", file);
       formData.append("title", file.name);
@@ -233,11 +400,12 @@ function DocumentsPanel({
         setDocs((prev) => [saved.document as PatientDoc, ...prev]);
       }
 
-      // 2) Extract + index
       setExtracting(true);
       await callExtractFileAPI(file);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload/index failed");
+      setUploadError(
+        err instanceof Error ? err.message : "Upload/index failed"
+      );
     } finally {
       setUploading(false);
       setExtracting(false);
@@ -272,9 +440,12 @@ function DocumentsPanel({
     setDeletingId(docId);
 
     try {
-      const res = await fetch(`/api/patients/${patientId}/documents/${docId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/patients/${patientId}/documents/${docId}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) throw new Error(await res.text());
       setDocs((prev) => prev.filter((d) => d.id !== docId));
@@ -286,7 +457,9 @@ function DocumentsPanel({
   }
 
   const filtered = docs
-    .filter((d) => d.title.toLowerCase().includes(query.trim().toLowerCase()))
+    .filter((d) =>
+      d.title.toLowerCase().includes(query.trim().toLowerCase())
+    )
     .filter((d, idx) => {
       if (tab === "favorite") return d.isFavorite;
       if (tab === "recent") return idx < 4;
@@ -295,7 +468,6 @@ function DocumentsPanel({
 
   return (
     <section className="mt-8">
-      {/* Header */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-slate-900">Documents</h2>
@@ -341,11 +513,11 @@ function DocumentsPanel({
       <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-slate-900">Semantic search</div>
-            <div className="text-xs text-slate-500"></div>
+            <div className="text-sm font-semibold text-slate-900">
+              Semantic search
+            </div>
           </div>
 
-          {/* responsive: stack on mobile */}
           <div className="flex w-full flex-col gap-2 sm:w-[520px] sm:flex-row">
             <input
               className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -385,14 +557,18 @@ function DocumentsPanel({
           </div>
         )}
 
-        {searchHits.length === 0 && semanticQ.trim() !== "" && !searching && !searchError && (
-          <div className="mt-3 text-sm text-slate-500">No semantic results.</div>
-        )}
+        {searchHits.length === 0 &&
+          semanticQ.trim() !== "" &&
+          !searching &&
+          !searchError && (
+            <div className="mt-3 text-sm text-slate-500">
+              No semantic results.
+            </div>
+          )}
       </div>
 
       {/* Tabs + local title search */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* tabs should scroll on mobile */}
         <div className="w-full overflow-x-auto">
           <div className="inline-flex min-w-max rounded-full bg-slate-100 p-1 text-xs font-medium text-slate-500">
             <button
@@ -412,7 +588,9 @@ function DocumentsPanel({
               onClick={() => setTab("recent")}
               className={
                 "rounded-full px-3 py-1 transition " +
-                (tab === "recent" ? "bg-white text-emerald-600 shadow-sm" : "hover:text-slate-700")
+                (tab === "recent"
+                  ? "bg-white text-emerald-600 shadow-sm"
+                  : "hover:text-slate-700")
               }
             >
               Recently added
@@ -422,7 +600,9 @@ function DocumentsPanel({
               onClick={() => setTab("all")}
               className={
                 "rounded-full px-3 py-1 transition " +
-                (tab === "all" ? "bg-white text-emerald-600 shadow-sm" : "hover:text-slate-700")
+                (tab === "all"
+                  ? "bg-white text-emerald-600 shadow-sm"
+                  : "hover:text-slate-700")
               }
             >
               All docs
@@ -451,17 +631,23 @@ function DocumentsPanel({
               <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
                 <FileText className="h-4 w-4" />
               </span>
-              <p className="text-xs leading-snug text-slate-700 line-clamp-4">{doc.title}</p>
+              <p className="text-xs leading-snug text-slate-700 line-clamp-4">
+                {doc.title}
+              </p>
             </div>
 
             <div className="mt-3 flex flex-col gap-2 text-[11px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
               <span>{formatDocDate(doc.date)}</span>
 
-              {/* responsive actions: wrap */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.open(`/api/patients/${patientId}/documents/${doc.id}`, "_blank")}
+                  onClick={() =>
+                    window.open(
+                      `/api/patients/${patientId}/documents/${doc.id}`,
+                      "_blank"
+                    )
+                  }
                   className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-100"
                 >
                   View
@@ -506,33 +692,67 @@ function DocumentsPanel({
 }
 
 /* ---------------------------- Page component ---------------------------- */
-export default function PatientProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default function PatientProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = usePromise(params);
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [docs, setDocs] = useState<PatientDoc[]>([]);
+  const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    let alive = true;
+
     async function loadData() {
+      setLoading(true);
+      setNotFound(false);
+
       try {
-        const res = await fetch(`/api/patients/${id}`);
-        if (res.status === 404) {
+        const [pRes, aRes] = await Promise.all([
+          fetch(`/api/patients/${id}`, { cache: "no-store" }),
+          fetch(`/api/patients/${id}/admissions`, { cache: "no-store" }),
+        ]);
+
+        if (!alive) return;
+
+        if (pRes.status === 404) {
           setNotFound(true);
+          setPatient(null);
+          setDocs([]);
+          setAdmissions([]);
           setLoading(false);
           return;
         }
-        const json = await res.json();
-        setPatient(json.patient as Patient);
-        setDocs((json.documents ?? []) as PatientDoc[]);
+
+        const pJson = await pRes.json();
+        setPatient(pJson.patient as Patient);
+        setDocs((pJson.documents ?? []) as PatientDoc[]);
+
+        if (aRes.ok) {
+          const aJson = await aRes.json();
+          setAdmissions((aJson.admissions ?? []) as Admission[]);
+        } else {
+          setAdmissions([]);
+        }
       } catch (error) {
         console.error("Failed to load patient", error);
+        if (!alive) return;
+        setAdmissions([]);
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     }
+
     loadData();
+
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
   if (loading) {
@@ -568,17 +788,21 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
       <Topbar title="Patient Profile" />
 
       <section className="px-3 pb-8 pt-4 sm:px-4 lg:px-6">
-        {/* Top cards: stack on mobile, 3 cols on lg */}
         <div className="grid gap-4 lg:grid-cols-3">
-          {/* Identity card */}
           <div className="card flex flex-col items-center px-5 py-6 text-center sm:px-6 sm:py-8">
             <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-50 text-3xl font-semibold text-emerald-600 sm:h-28 sm:w-28">
               {initials}
             </div>
-            <h2 className="text-base font-semibold text-slate-900 sm:text-lg">{patient.name}</h2>
+            <h2 className="text-base font-semibold text-slate-900 sm:text-lg">
+              {patient.name}
+            </h2>
 
-            <p className="mt-1 break-words text-xs text-slate-500">{patient.email ?? ""}</p>
-            {patient.phone && <p className="mt-1 text-xs text-slate-500">{patient.phone}</p>}
+            <p className="mt-1 break-words text-xs text-slate-500">
+              {patient.email ?? ""}
+            </p>
+            {patient.phone && (
+              <p className="mt-1 text-xs text-slate-500">{patient.phone}</p>
+            )}
 
             {patient.idnum && (
               <p className="mt-4 text-xs font-medium text-slate-400">
@@ -587,9 +811,10 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
             )}
           </div>
 
-          {/* General information */}
           <div className="card px-5 py-5 sm:px-6 sm:py-6">
-            <h3 className="mb-4 text-sm font-semibold text-slate-800">General Information</h3>
+            <h3 className="mb-4 text-sm font-semibold text-slate-800">
+              General Information
+            </h3>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-3 text-xs text-slate-600 sm:grid-cols-2">
               <div>
                 <dt className="text-slate-400">Date of birth</dt>
@@ -597,7 +822,9 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
               </div>
               <div>
                 <dt className="text-slate-400">Registration date</dt>
-                <dd className="font-medium break-words">{meta.registrationDate}</dd>
+                <dd className="font-medium break-words">
+                  {meta.registrationDate}
+                </dd>
               </div>
               <div className="sm:col-span-2">
                 <dt className="text-slate-400">Address</dt>
@@ -606,29 +833,41 @@ export default function PatientProfilePage({ params }: { params: Promise<{ id: s
             </dl>
           </div>
 
-          {/* Anamnesis */}
           <div className="card px-5 py-5 sm:px-6 sm:py-6">
-            <h3 className="mb-4 text-sm font-semibold text-slate-800">Anamnesis</h3>
+            <h3 className="mb-4 text-sm font-semibold text-slate-800">
+              Anamnesis
+            </h3>
             <dl className="grid grid-cols-1 gap-y-3 text-xs text-slate-600">
               <div className="flex items-start justify-between gap-4">
                 <dt className="text-slate-400">Allergies</dt>
-                <dd className="font-medium text-right break-words">{meta.allergies}</dd>
+                <dd className="font-medium text-right break-words">
+                  {meta.allergies}
+                </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <dt className="text-slate-400">Chronic diseases</dt>
-                <dd className="font-medium text-right break-words">{meta.chronicDiseases}</dd>
+                <dd className="font-medium text-right break-words">
+                  {meta.chronicDiseases}
+                </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <dt className="text-slate-400">Blood type</dt>
-                <dd className="font-medium text-right break-words">{meta.bloodType}</dd>
+                <dd className="font-medium text-right break-words">
+                  {meta.bloodType}
+                </dd>
               </div>
               <div className="flex items-start justify-between gap-4">
                 <dt className="text-slate-400">Past illnesses</dt>
-                <dd className="font-medium text-right break-words">{meta.pastIllnesses}</dd>
+                <dd className="font-medium text-right break-words">
+                  {meta.pastIllnesses}
+                </dd>
               </div>
             </dl>
           </div>
         </div>
+
+        {/* ✅ Admissions section (with Edit link added) */}
+        <AdmissionsPanel admissions={admissions} patientId={id} />
 
         {/* Documents section */}
         <DocumentsPanel docs={docs} setDocs={setDocs} patientId={id} />

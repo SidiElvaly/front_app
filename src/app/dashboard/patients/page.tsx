@@ -17,6 +17,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { ChangeEvent } from "react";
 
 /* ----------------- Small UI helpers ----------------- */
@@ -97,6 +98,7 @@ export default function PatientsPage() {
   const [q, setQ] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/patients", { cache: "no-store" })
@@ -284,17 +286,13 @@ export default function PatientsPage() {
 
                     {/* Mobile actions */}
                     <div className="pt-2 flex items-center justify-end gap-2">
-                      <Link href={`/dashboard/patients/${p.id}`} title="View">
-                        <IconButton title="View">
-                          <Eye className="h-3.5 w-3.5" />
-                        </IconButton>
-                      </Link>
-
-                      <Link href={`/dashboard/patients/${p.id}/edit`} title="Edit">
-                        <IconButton title="Edit" variant="primary">
-                          <PencilLine className="h-3.5 w-3.5" />
-                        </IconButton>
-                      </Link>
+                      <IconButton
+                        title="Edit"
+                        variant="primary"
+                        onClick={() => router.push(`/dashboard/patients/${p.id}/edit`)}
+                      >
+                        <PencilLine className="h-3.5 w-3.5" />
+                      </IconButton>
 
                       <IconButton
                         title="Delete"
@@ -378,12 +376,6 @@ export default function PatientsPage() {
 
                     <td className="px-3 py-3">
                       <div className="flex justify-center gap-2">
-                        <Link href={`/dashboard/patients/${p.id}`} title="View">
-                          <IconButton title="View">
-                            <Eye className="h-3.5 w-3.5" />
-                          </IconButton>
-                        </Link>
-
                         <Link href={`/dashboard/patients/${p.id}/edit`} title="Edit">
                           <IconButton title="Edit" variant="primary">
                             <PencilLine className="h-3.5 w-3.5" />
