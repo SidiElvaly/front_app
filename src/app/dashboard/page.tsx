@@ -40,6 +40,109 @@ function Badge({
   );
 }
 
+/* ---------------- Skeleton ---------------- */
+
+function DashboardSkeleton() {
+  return (
+    <section className="mx-auto w-full max-w-7xl px-3 sm:px-4 lg:px-6 pb-10">
+      {/* Breadcrumb + search */}
+      <div className="mt-1 mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="h-4 w-60 rounded bg-slate-100 animate-pulse" />
+        <div className="h-9 w-full sm:w-80 rounded-xl bg-slate-100 animate-pulse" />
+      </div>
+
+      {/* Reminder banner */}
+      <div className="mb-5 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 h-4 w-4 rounded bg-slate-100 animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-80 max-w-full rounded bg-slate-100 animate-pulse" />
+            <div className="h-3 w-56 max-w-full rounded bg-slate-100 animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 px-4 py-4"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                <div className="mt-2 h-7 w-20 rounded bg-slate-100 animate-pulse" />
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-slate-100 animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main grid */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* High-risk patients (left, 2 cols) */}
+        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 p-4 lg:col-span-2">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-64 rounded bg-slate-100 animate-pulse" />
+              <div className="h-3 w-48 rounded bg-slate-100 animate-pulse" />
+            </div>
+            <div className="h-7 w-36 rounded-full bg-slate-100 animate-pulse" />
+          </div>
+
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                      <div className="h-5 w-20 rounded-full bg-slate-100 animate-pulse" />
+                    </div>
+                    <div className="h-3 w-52 rounded bg-slate-100 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="h-8 w-8 rounded-xl bg-slate-100 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Upcoming appointments (right col) */}
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="h-4 w-52 rounded bg-slate-100 animate-pulse" />
+            </div>
+
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2"
+                >
+                  <div className="min-w-0 space-y-2">
+                    <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+                    <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                  </div>
+                  <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const { status } = useSession();
 
@@ -54,6 +157,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status !== "authenticated") return;
 
+    setLoading(true);
     fetch("/api/dashboard", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
@@ -62,17 +166,17 @@ export default function DashboardPage() {
       })
       .catch((err) => {
         console.error("Dashboard error:", err);
+        setData(null);
         setLoading(false);
       });
   }, [status]);
 
-  if (status === "loading") {
+  // Keep this simple: topbar + skeleton (no blank page, no "Loading..." text)
+  if (status !== "authenticated") {
     return (
       <main className="w-full">
         <Topbar title="Dashboard" />
-        <div className="mx-auto w-full max-w-7xl px-3 sm:px-4 lg:px-6 py-6 text-sm text-gray-500">
-          Checking session...
-        </div>
+        <DashboardSkeleton />
       </main>
     );
   }
@@ -81,9 +185,7 @@ export default function DashboardPage() {
     return (
       <main className="w-full">
         <Topbar title="Dashboard" />
-        <div className="mx-auto w-full max-w-7xl px-3 sm:px-4 lg:px-6 py-6 text-sm text-gray-500">
-          Loading dashboard...
-        </div>
+        <DashboardSkeleton />
       </main>
     );
   }
@@ -140,7 +242,8 @@ export default function DashboardPage() {
           <CalendarDays className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <p className="leading-relaxed">
             <span className="font-semibold">Reminder:</span>{" "}
-            {data.highRiskPatients.length} high-risk patients have no upcoming appointment.
+            {data.highRiskPatients.length} high-risk patients have no upcoming
+            appointment.
           </p>
         </div>
 

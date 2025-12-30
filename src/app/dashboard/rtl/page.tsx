@@ -4,9 +4,98 @@ import { useEffect, useState } from "react";
 import Topbar from "@/components/Topbar";
 import { CalendarDays, Users, FileText, AlertCircle } from "lucide-react";
 
+
+
+
+function RTLPreviewSkeleton() {
+  return (
+    <section dir="rtl" className="px-3 pb-8 pt-4 text-right sm:px-4 lg:px-6">
+      {/* Welcome banner */}
+      <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-card sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="h-3 w-64 max-w-full rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-6 w-28 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-4 w-[520px] max-w-full rounded bg-slate-100 animate-pulse" />
+          </div>
+          <div className="sm:text-left">
+            <div className="h-7 w-28 rounded-full bg-slate-100 animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* KPI grid */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="card p-4">
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+              <div className="h-4 w-4 rounded bg-slate-100 animate-pulse" />
+            </div>
+            <div className="mt-3 h-8 w-20 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-3 w-32 rounded bg-slate-100 animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      {/* Lower grid */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* High-risk patients */}
+        <div className="card p-4 sm:p-6">
+          <div className="h-4 w-60 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-2 h-3 w-44 rounded bg-slate-100 animate-pulse" />
+
+          <div className="mt-4 divide-y divide-slate-100">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-full bg-slate-100 animate-pulse" />
+                  <div className="min-w-0">
+                    <div className="h-3 w-36 rounded bg-slate-100 animate-pulse" />
+                    <div className="mt-2 h-3 w-44 rounded bg-slate-100 animate-pulse" />
+                  </div>
+                </div>
+                <div className="h-7 w-20 rounded-full bg-slate-100 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Today overview */}
+        <div className="card p-4 sm:p-6">
+          <div className="h-4 w-32 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-2 h-3 w-72 max-w-full rounded bg-slate-100 animate-pulse" />
+
+          <div className="mt-5 space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-3">
+                <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+                <div className="h-4 w-10 rounded bg-slate-100 animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-3 space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                  <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                  <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function RTLPreviewPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     fetch("/api/dashboard", { cache: "no-store" })
@@ -25,9 +114,7 @@ export default function RTLPreviewPage() {
     return (
       <main className="w-full">
         <Topbar title="RTL Preview" />
-        <div dir="rtl" className="px-4 py-6 text-sm text-slate-500 text-right">
-          جارٍ تحميل البيانات...
-        </div>
+        <RTLPreviewSkeleton />
       </main>
     );
   }

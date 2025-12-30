@@ -3,7 +3,123 @@
 import { useEffect, useState, useMemo } from "react";
 import Topbar from "@/components/Topbar";
 import { CalendarDays, DollarSign, CreditCard } from "lucide-react";
+/* ---------- Skeleton ---------- */
+function BillingSkeleton() {
+  return (
+    <section className="px-3 pb-8 sm:px-4 lg:px-6">
+      <div className="mt-1 mb-6 space-y-2">
+        <div className="h-4 w-72 max-w-full rounded bg-slate-100 animate-pulse" />
+      </div>
 
+      {/* Summary cards */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Total Paid */}
+        <div className="card p-4 sm:p-6">
+          <div className="flex items-center justify-between">
+            <div className="h-4 w-24 rounded bg-slate-100 animate-pulse" />
+            <div className="h-9 w-9 rounded-lg bg-slate-100 animate-pulse" />
+          </div>
+          <div className="mt-4 h-7 w-40 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-3 h-3 w-52 rounded bg-slate-100 animate-pulse" />
+        </div>
+
+        {/* Latest Invoice */}
+        <div className="card p-4 sm:p-6">
+          <div className="flex items-center justify-between">
+            <div className="h-4 w-28 rounded bg-slate-100 animate-pulse" />
+            <div className="h-9 w-9 rounded-lg bg-slate-100 animate-pulse" />
+          </div>
+          <div className="mt-4 h-7 w-40 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-3 h-3 w-28 rounded bg-slate-100 animate-pulse" />
+        </div>
+
+        {/* Payment Method */}
+        <div className="card p-0 overflow-hidden sm:col-span-2 lg:col-span-1">
+          <div className="px-4 pt-4 pb-2 sm:px-6">
+            <div className="h-4 w-32 rounded bg-slate-100 animate-pulse" />
+          </div>
+
+          <div className="px-4 pb-4 sm:px-6">
+            <div className="h-40 w-full rounded-xl bg-slate-100 animate-pulse" />
+            <div className="mt-3 h-3 w-56 rounded bg-slate-100 animate-pulse" />
+          </div>
+        </div>
+      </div>
+
+      {/* Header + controls */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="h-5 w-44 rounded bg-slate-100 animate-pulse" />
+          <div className="h-4 w-32 rounded bg-slate-100 animate-pulse" />
+        </div>
+
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+          <div className="h-10 w-full sm:w-44 rounded-xl bg-slate-100 animate-pulse" />
+          <div className="h-10 w-full sm:w-64 rounded-xl bg-slate-100 animate-pulse" />
+        </div>
+      </div>
+
+      {/* List/table container */}
+      <div className="card p-0 overflow-hidden">
+        {/* Mobile cards skeleton */}
+        <div className="divide-y divide-gray-100 lg:hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-4 w-60 max-w-full rounded bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-32 rounded bg-slate-100 animate-pulse" />
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <div className="h-4 w-20 rounded bg-slate-100 animate-pulse" />
+                  <div className="h-7 w-24 rounded-full bg-slate-100 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table skeleton */}
+        <div className="hidden overflow-x-auto lg:block">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 border-b border-gray-200">
+                <th className="px-6 py-4 text-left font-semibold">Invoice</th>
+                <th className="px-6 py-4 text-left font-semibold">Date</th>
+                <th className="px-6 py-4 text-left font-semibold">Due Date</th>
+                <th className="px-6 py-4 text-left font-semibold">Amount</th>
+                <th className="px-6 py-4 text-left font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-6 py-4">
+                    <div className="h-4 w-56 rounded bg-slate-100 animate-pulse" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 w-24 rounded bg-slate-100 animate-pulse" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 w-24 rounded bg-slate-100 animate-pulse" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 w-20 rounded bg-slate-100 animate-pulse" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-7 w-24 rounded-full bg-slate-100 animate-pulse" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
 /* ---------- Types ---------- */
 type Invoice = {
   id: string;
@@ -80,11 +196,11 @@ export default function BillingPage() {
     });
   }, [invoices, search, statusFilter]);
 
-  if (loading) {
+ if (loading) {
     return (
       <main className="w-full">
         <Topbar title="Billing" />
-        <div className="px-4 py-6 text-sm text-gray-500">Loading invoices...</div>
+        <BillingSkeleton />
       </main>
     );
   }

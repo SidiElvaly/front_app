@@ -4,6 +4,59 @@ import { useState, useRef, useEffect, FormEvent } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Topbar from "@/components/Topbar";
 import { Camera, LogOut, MapPin, Mail, Phone, ShieldCheck, User2, X } from "lucide-react";
+/* ---------- Skeleton ---------- */
+function ProfileSkeleton() {
+  return (
+    <section className="px-3 pb-10 pt-4 sm:px-4 lg:px-8">
+      <div className="card overflow-hidden rounded-2xl border border-slate-100 shadow-md">
+        {/* Header */}
+        <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-4 py-4 sm:px-6 sm:py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="h-5 w-28 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-3 w-64 max-w-full rounded bg-slate-100 animate-pulse" />
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="h-9 w-full sm:w-28 rounded-full bg-slate-100 animate-pulse" />
+            <div className="h-9 w-full sm:w-32 rounded-full bg-slate-100 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="grid gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[260px,1fr] lg:gap-10">
+          {/* Avatar */}
+          <div className="flex flex-col items-center text-center">
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 animate-pulse sm:h-32 sm:w-32" />
+            <div className="mt-3 h-3 w-44 rounded bg-slate-100 animate-pulse" />
+          </div>
+
+          {/* Fields */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                <div className="h-11 w-full rounded-xl bg-slate-100 animate-pulse" />
+              </div>
+            ))}
+
+            {/* Security */}
+            <div className="col-span-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-full bg-slate-100 animate-pulse" />
+                  <div className="min-w-0">
+                    <div className="h-4 w-24 rounded bg-slate-100 animate-pulse" />
+                    <div className="mt-2 h-3 w-64 max-w-full rounded bg-slate-100 animate-pulse" />
+                  </div>
+                </div>
+                <div className="h-9 w-full sm:w-36 rounded-full bg-slate-100 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -13,6 +66,8 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -24,20 +79,33 @@ export default function ProfilePage() {
 
   // Load profile data
   useEffect(() => {
+    let alive = true;
+
     async function loadProfile() {
-      const res = await fetch("/api/profile", { cache: "no-store" });
-      if (!res.ok) return;
+      try {
+        setLoading(true);
+        const res = await fetch("/api/profile", { cache: "no-store" });
+        if (!res.ok) return;
 
-      const data = await res.json();
+        const data = await res.json();
+        if (!alive) return;
 
-      setFullName(data.name || "");
-      setEmail(data.email || "");
-      setPhone(data.phone || "");
-      setAddress(data.address || "");
-      setAvatarPreview(data.image || null);
+        setFullName(data.name || "");
+        setEmail(data.email || "");
+        setPhone(data.phone || "");
+        setAddress(data.address || "");
+        setAvatarPreview(data.image || null);
+      } catch (e) {
+        console.error("Profile load error:", e);
+      } finally {
+        if (alive) setLoading(false);
+      }
     }
 
     loadProfile();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Avatar upload
@@ -113,6 +181,15 @@ export default function ProfilePage() {
       .join("")
       .slice(0, 2)
       .toUpperCase();
+
+  if (loading) {
+    return (
+      <main className="w-full">
+        <Topbar title="Profile" />
+        <ProfileSkeleton />
+      </main>
+    );
+  }
 
   return (
     <main className="w-full">
@@ -278,7 +355,7 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Password Modal (responsive) */}
+      {/* Password Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg sm:p-6">
@@ -320,7 +397,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Buttons: stack on mobile */}
             <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2">
               <button
                 type="button"
@@ -347,3 +423,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

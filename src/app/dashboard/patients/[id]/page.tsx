@@ -60,6 +60,116 @@ type SearchHit = {
   text: string;
 };
 
+
+function PatientProfileSkeleton() {
+  return (
+    <section className="px-3 pb-8 pt-4 sm:px-4 lg:px-6">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="card flex flex-col items-center px-5 py-6 text-center sm:px-6 sm:py-8">
+          <div className="mb-4 h-24 w-24 rounded-full bg-slate-100 animate-pulse sm:h-28 sm:w-28" />
+          <div className="h-4 w-40 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-3 h-3 w-48 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-2 h-3 w-36 rounded bg-slate-100 animate-pulse" />
+          <div className="mt-6 h-3 w-44 rounded bg-slate-100 animate-pulse" />
+        </div>
+
+        <div className="card px-5 py-5 sm:px-6 sm:py-6">
+          <div className="mb-4 h-4 w-40 rounded bg-slate-100 animate-pulse" />
+          <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+              <div className="h-3 w-32 rounded bg-slate-100 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+              <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <div className="h-3 w-20 rounded bg-slate-100 animate-pulse" />
+              <div className="h-3 w-full rounded bg-slate-100 animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card px-5 py-5 sm:px-6 sm:py-6">
+          <div className="mb-4 h-4 w-28 rounded bg-slate-100 animate-pulse" />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-start justify-between gap-4">
+                <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                <div className="h-3 w-32 rounded bg-slate-100 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Admissions skeleton */}
+      <div className="mt-6">
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <div className="h-5 w-28 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-3 w-72 rounded bg-slate-100 animate-pulse" />
+          </div>
+          <div className="h-9 w-36 rounded-full bg-slate-100 animate-pulse" />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                </div>
+                <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="h-3 w-full rounded bg-slate-100 animate-pulse" />
+                <div className="h-3 w-5/6 rounded bg-slate-100 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Documents skeleton */}
+      <div className="mt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <div className="h-5 w-28 rounded bg-slate-100 animate-pulse" />
+            <div className="mt-2 h-3 w-80 rounded bg-slate-100 animate-pulse" />
+          </div>
+          <div className="h-9 w-32 rounded-full bg-slate-100 animate-pulse" />
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="h-9 w-full rounded-full bg-slate-100 animate-pulse" />
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-xl bg-slate-100 animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-full rounded bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-4/5 rounded bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-2/3 rounded bg-slate-100 animate-pulse" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <div className="h-3 w-20 rounded bg-slate-100 animate-pulse" />
+                <div className="h-7 w-24 rounded-full bg-slate-100 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ----------------- Helpers: patient meta with fallbacks -------------- */
 function buildPatientMeta(p: Patient) {
   return {
@@ -756,13 +866,14 @@ export default function PatientProfilePage({
   }, [id]);
 
   if (loading) {
-    return (
-      <main className="w-full">
-        <Topbar title="Patient Profile" />
-        <div className="px-4 py-6 text-sm text-gray-500">Loading...</div>
-      </main>
-    );
-  }
+  return (
+    <main className="w-full">
+      <Topbar title="Patient Profile" />
+      <PatientProfileSkeleton />
+    </main>
+  );
+}
+
 
   if (notFound || !patient) {
     return (

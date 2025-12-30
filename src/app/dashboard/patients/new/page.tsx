@@ -26,38 +26,84 @@ const emptyToUndefined = (v: unknown) => {
   return t === "" ? undefined : t;
 };
 
+const isDateString = (s?: string) => {
+  if (!s) return true;
+  const d = new Date(s);
+  return !Number.isNaN(d.getTime());
+};
+
 const NewPatientSchema = z
   .object({
-    name: z.string().min(2, "Full name must be at least 2 characters"),
+    name: z.string().trim().min(2, "Full name must be at least 2 characters."),
+
     email: z.preprocess(
       emptyToUndefined,
-      z.string().email("Invalid email").optional()
+      z.string().email("Email is invalid (example: name@example.com).").optional()
     ),
+
     phone: z.preprocess(
       emptyToUndefined,
       z
         .string()
-        .min(6, "Phone too short")
-        .max(20, "Phone too long")
+        .min(6, "Phone is too short (min 6).")
+        .max(20, "Phone is too long (max 20).")
         .optional()
     ),
-    idnum: z.preprocess(emptyToUndefined, z.string().max(50).optional()),
-    lastVisit: z.preprocess(emptyToUndefined, z.string().optional()), // YYYY-MM-DD
+
+    idnum: z.preprocess(emptyToUndefined, z.string().max(50, "Enroll number is too long.").optional()),
+
+    lastVisit: z
+      .preprocess(emptyToUndefined, z.string().optional())
+      .refine((v) => isDateString(v), "Last visit date is invalid."),
+
     gender: z.enum(["male", "female", "other"]).optional(),
-    dob: z.preprocess(emptyToUndefined, z.string().optional()), // YYYY-MM-DD
-    address: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
-    // If you really want patient risk status, keep it. If not, remove it here and in API body.
+
+    dob: z
+      .preprocess(emptyToUndefined, z.string().optional())
+      .refine((v) => isDateString(v), "Date of birth is invalid."),
+
+    address: z.preprocess(
+      emptyToUndefined,
+      z.string().max(200, "Address is too long (max 200).").optional()
+    ),
+
+    // Optional. If you want NO status at all: remove this from schema + UI + payload.
     status: z.preprocess(emptyToUndefined, z.enum(["LOW", "MEDIUM", "HIGH"]).optional()),
-    notes: z.preprocess(emptyToUndefined, z.string().max(4000).optional()),
+
+    notes: z.preprocess(
+      emptyToUndefined,
+      z.string().max(4000, "Notes is too long (max 4000).").optional()
+    ),
   })
   .strict();
 
-type FieldErrors = Partial<Record<keyof z.infer<typeof NewPatientSchema>, string>>;
+type Payload = z.infer<typeof NewPatientSchema>;
+type FieldErrors = Partial<Record<keyof Payload, string>>;
 
-function isValidDateString(s?: string) {
-  if (!s) return true;
-  const d = new Date(s);
-  return !Number.isNaN(d.getTime());
+function firstErrorField(errors: FieldErrors) {
+  const order: (keyof Payload)[] = [
+    "name",
+    "email",
+    "phone",
+    "idnum",
+    "gender",
+    "dob",
+    "lastVisit",
+    "address",
+    "status",
+    "notes",
+  ];
+  return order.find((k) => !!errors[k]);
+}
+
+function mapFlattenToFieldErrors(flat: { fieldErrors: Record<string, string[] | undefined> }): FieldErrors {
+  const out: FieldErrors = {};
+  const fe = flat?.fieldErrors ?? {};
+  (Object.keys(fe) as Array<keyof Payload | string>).forEach((k) => {
+    const arr = fe[k as string];
+    if (arr && arr[0]) (out as any)[k] = arr[0];
+  });
+  return out;
 }
 
 /* ---------------- Page ---------------- */
@@ -83,15 +129,41 @@ export default function NewPatientPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
 
+  // Refs for focusing on first invalid field
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const phoneRef = useRef<HTMLInputElement | null>(null);
+  const idnumRef = useRef<HTMLInputElement | null>(null);
+  const genderRef = useRef<HTMLSelectElement | null>(null);
+  const dobRef = useRef<HTMLInputElement | null>(null);
+  const lastVisitRef = useRef<HTMLInputElement | null>(null);
+  const addressRef = useRef<HTMLInputElement | null>(null);
+  const statusRef = useRef<HTMLSelectElement | null>(null);
+  const notesRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const refs: Record<keyof Payload, React.RefObject<any>> = {
+    name: nameRef,
+    email: emailRef,
+    phone: phoneRef,
+    idnum: idnumRef,
+    lastVisit: lastVisitRef,
+    gender: genderRef,
+    dob: dobRef,
+    address: addressRef,
+    status: statusRef,
+    notes: notesRef,
+  };
+
   const handleAvatarClick = () => fileInputRef.current?.click();
 
   const handleAvatarChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // simple client-side check
+    setFormError(null);
+
     if (file.size > 2 * 1024 * 1024) {
-      setFormError("Avatar must be <= 2MB");
+      setFormError("Avatar must be 2MB or less.");
       e.target.value = "";
       return;
     }
@@ -108,35 +180,29 @@ export default function NewPatientPage() {
   const handleCancel = () => router.push("/dashboard/patients");
 
   const payload = useMemo(() => {
-    return {
+    const p: Payload = {
       name: fullName,
       email,
       phone,
       idnum: enrollNumber,
       lastVisit,
-      gender: gender || undefined,
+      gender: (gender || undefined) as any,
       dob,
       address,
-      status: status || undefined,
+      status: (status || undefined) as any,
       notes,
     };
+    return p;
   }, [fullName, email, phone, enrollNumber, lastVisit, gender, dob, address, status, notes]);
 
-  function applyZodErrors(flat: any) {
-    const fieldErrors: FieldErrors = {};
-    const fe = flat?.fieldErrors ?? {};
-    // Map schema keys to UI fields
-    if (fe.name?.[0]) fieldErrors.name = fe.name[0];
-    if (fe.email?.[0]) fieldErrors.email = fe.email[0];
-    if (fe.phone?.[0]) fieldErrors.phone = fe.phone[0];
-    if (fe.idnum?.[0]) fieldErrors.idnum = fe.idnum[0];
-    if (fe.lastVisit?.[0]) fieldErrors.lastVisit = fe.lastVisit[0];
-    if (fe.gender?.[0]) fieldErrors.gender = fe.gender[0];
-    if (fe.dob?.[0]) fieldErrors.dob = fe.dob[0];
-    if (fe.address?.[0]) fieldErrors.address = fe.address[0];
-    if (fe.status?.[0]) fieldErrors.status = fe.status[0];
-    if (fe.notes?.[0]) fieldErrors.notes = fe.notes[0];
-    setErrors(fieldErrors);
+  function focusFirstError(errs: FieldErrors) {
+    const first = firstErrorField(errs);
+    if (!first) return;
+    const r = refs[first]?.current;
+    if (r && typeof r.focus === "function") r.focus();
+    if (r && typeof r.scrollIntoView === "function") {
+      r.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -144,20 +210,13 @@ export default function NewPatientPage() {
     setFormError(null);
     setErrors({});
 
-    // Extra date safety
-    if (!isValidDateString(dob)) {
-      setErrors((prev) => ({ ...prev, dob: "Invalid date of birth" }));
-      return;
-    }
-    if (!isValidDateString(lastVisit)) {
-      setErrors((prev) => ({ ...prev, lastVisit: "Invalid last visit date" }));
-      return;
-    }
-
-    // Validate with Zod
+    // 1) Client validation
     const parsed = NewPatientSchema.safeParse(payload);
     if (!parsed.success) {
-      applyZodErrors(parsed.error.flatten());
+      const nextErrors = mapFlattenToFieldErrors(parsed.error.flatten());
+      setErrors(nextErrors);
+      setFormError("Please fix the highlighted fields.");
+      focusFirstError(nextErrors);
       return;
     }
 
@@ -170,8 +229,20 @@ export default function NewPatientPage() {
       });
 
       const json = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        setFormError(json?.error || "Failed to create patient");
+        // 2) Server validation (same UI)
+        const serverFe = json?.details?.fieldErrors;
+        if (serverFe) {
+          const nextErrors = mapFlattenToFieldErrors({ fieldErrors: serverFe });
+          setErrors(nextErrors);
+          setFormError(json?.error || "Please fix the highlighted fields.");
+          focusFirstError(nextErrors);
+          setSaving(false);
+          return;
+        }
+
+        setFormError(json?.error || "Failed to create patient.");
         setSaving(false);
         return;
       }
@@ -179,10 +250,34 @@ export default function NewPatientPage() {
       router.push("/dashboard/patients");
     } catch (err) {
       console.error(err);
-      setFormError("Network error");
+      setFormError("Network error. Please try again.");
       setSaving(false);
     }
   };
+
+  const inputClass = (key: keyof Payload) =>
+    [
+      "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
+      errors[key]
+        ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+        : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
+    ].join(" ");
+
+  const selectClass = (key: keyof Payload) =>
+    [
+      "w-full rounded-xl border bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
+      errors[key]
+        ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+        : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
+    ].join(" ");
+
+  const textareaClass = (key: keyof Payload) =>
+    [
+      "min-h-[120px] w-full rounded-xl border bg-white px-9 py-2 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:ring-1",
+      errors[key]
+        ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
+        : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
+    ].join(" ");
 
   return (
     <main className="w-full">
@@ -227,7 +322,7 @@ export default function NewPatientPage() {
             </div>
           </div>
 
-          {/* Form-level error */}
+          {/* Global error */}
           {formError && (
             <div className="mx-4 mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:mx-6">
               {formError}
@@ -253,17 +348,13 @@ export default function NewPatientPage() {
                       <User2 className="h-4 w-4" />
                     </span>
                     <input
+                      ref={nameRef}
                       type="text"
-                      className={[
-                        "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                        errors.name
-                          ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                          : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                      ].join(" ")}
+                      className={inputClass("name")}
                       placeholder="e.g. Karthi"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      required
+                      aria-invalid={!!errors.name}
                     />
                   </div>
                   {errors.name && <p className="text-[11px] text-rose-600">{errors.name}</p>}
@@ -277,16 +368,13 @@ export default function NewPatientPage() {
                       <Mail className="h-4 w-4" />
                     </span>
                     <input
+                      ref={emailRef}
                       type="email"
-                      className={[
-                        "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                        errors.email
-                          ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                          : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                      ].join(" ")}
+                      className={inputClass("email")}
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      aria-invalid={!!errors.email}
                     />
                   </div>
                   {errors.email && <p className="text-[11px] text-rose-600">{errors.email}</p>}
@@ -300,16 +388,13 @@ export default function NewPatientPage() {
                       <Phone className="h-4 w-4" />
                     </span>
                     <input
+                      ref={phoneRef}
                       type="tel"
-                      className={[
-                        "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                        errors.phone
-                          ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                          : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                      ].join(" ")}
+                      className={inputClass("phone")}
                       placeholder="e.g. 7524547760"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      aria-invalid={!!errors.phone}
                     />
                   </div>
                   {errors.phone && <p className="text-[11px] text-rose-600">{errors.phone}</p>}
@@ -323,16 +408,13 @@ export default function NewPatientPage() {
                       <IdCard className="h-4 w-4" />
                     </span>
                     <input
+                      ref={idnumRef}
                       type="text"
-                      className={[
-                        "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                        errors.idnum
-                          ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                          : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                      ].join(" ")}
+                      className={inputClass("idnum")}
                       placeholder="ID / MRN"
                       value={enrollNumber}
                       onChange={(e) => setEnrollNumber(e.target.value)}
+                      aria-invalid={!!errors.idnum}
                     />
                   </div>
                   {errors.idnum && <p className="text-[11px] text-rose-600">{errors.idnum}</p>}
@@ -344,14 +426,11 @@ export default function NewPatientPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Gender</label>
                   <select
-                    className={[
-                      "w-full rounded-xl border bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                      errors.gender
-                        ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                        : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                    ].join(" ")}
+                    ref={genderRef}
+                    className={selectClass("gender")}
                     value={gender}
                     onChange={(e) => setGender(e.target.value as typeof gender)}
+                    aria-invalid={!!errors.gender}
                   >
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
@@ -369,15 +448,12 @@ export default function NewPatientPage() {
                       <Calendar className="h-4 w-4" />
                     </span>
                     <input
+                      ref={dobRef}
                       type="date"
-                      className={[
-                        "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                        errors.dob
-                          ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                          : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                      ].join(" ")}
+                      className={inputClass("dob")}
                       value={dob}
                       onChange={(e) => setDob(e.target.value)}
+                      aria-invalid={!!errors.dob}
                     />
                   </div>
                   {errors.dob && <p className="text-[11px] text-rose-600">{errors.dob}</p>}
@@ -391,15 +467,12 @@ export default function NewPatientPage() {
                       <Calendar className="h-4 w-4" />
                     </span>
                     <input
+                      ref={lastVisitRef}
                       type="date"
-                      className={[
-                        "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                        errors.lastVisit
-                          ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                          : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                      ].join(" ")}
+                      className={inputClass("lastVisit")}
                       value={lastVisit}
                       onChange={(e) => setLastVisit(e.target.value)}
+                      aria-invalid={!!errors.lastVisit}
                     />
                   </div>
                   {errors.lastVisit && (
@@ -416,16 +489,13 @@ export default function NewPatientPage() {
                     <MapPin className="h-4 w-4" />
                   </span>
                   <input
+                    ref={addressRef}
                     type="text"
-                    className={[
-                      "w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                      errors.address
-                        ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                        : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                    ].join(" ")}
+                    className={inputClass("address")}
                     placeholder="City, Country"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
+                    aria-invalid={!!errors.address}
                   />
                 </div>
                 {errors.address && (
@@ -433,18 +503,15 @@ export default function NewPatientPage() {
                 )}
               </div>
 
-              {/* Status */}
+              {/* Status (optional). Remove block if you want none */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-600">Status</label>
                 <select
-                  className={[
-                    "w-full rounded-xl border bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none focus:ring-1",
-                    errors.status
-                      ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                      : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                  ].join(" ")}
+                  ref={statusRef}
+                  className={selectClass("status")}
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
+                  aria-invalid={!!errors.status}
                 >
                   <option value="">Select status</option>
                   <option value="LOW">LOW</option>
@@ -464,15 +531,12 @@ export default function NewPatientPage() {
                     <FileText className="h-4 w-4" />
                   </span>
                   <textarea
-                    className={[
-                      "min-h-[120px] w-full rounded-xl border bg-white px-9 py-2 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-400 focus:ring-1",
-                      errors.notes
-                        ? "border-rose-300 focus:border-rose-500 focus:ring-rose-500"
-                        : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-500",
-                    ].join(" ")}
+                    ref={notesRef}
+                    className={textareaClass("notes")}
                     placeholder="Symptoms, allergies, important details..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
+                    aria-invalid={!!errors.notes}
                   />
                 </div>
                 {errors.notes && <p className="text-[11px] text-rose-600">{errors.notes}</p>}
@@ -507,7 +571,8 @@ export default function NewPatientPage() {
                   <button
                     type="button"
                     onClick={handleAvatarClick}
-                    className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-slate-300 shadow-sm hover:bg-slate-50 sm:h-28 sm:w-28"
+                    disabled={saving}
+                    className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-slate-300 shadow-sm hover:bg-slate-50 disabled:opacity-60 sm:h-28 sm:w-28"
                   >
                     {avatarPreview ? (
                       // eslint-disable-next-line @next/next/no-img-element

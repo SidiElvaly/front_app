@@ -81,9 +81,7 @@ export default function AdmissionPage({ params }: { params: Promise<{ id: string
           <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-4 py-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-slate-900">Reception / Admission</h2>
-              <p className="mt-1 text-xs text-slate-500">
-                {loadingPatient ? "Loading patient..." : patient ? `Patient: ${patient.name}` : "Patient not found"}
-              </p>
+              
             </div>
 
             <div className="flex flex-wrap items-center gap-2">

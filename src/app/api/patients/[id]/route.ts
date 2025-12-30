@@ -1,61 +1,83 @@
-import { NextResponse } from "next/server";
+// src/app/api/patients/[id]/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-export async function GET(_req: Request, ctx: any) {
-  const params = await ctx.params;
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+type Ctx = {
+  params: Promise<{ id: string }>;
+};
+
+function toDateOrNull(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export async function GET(_req: NextRequest, ctx: Ctx) {
+  const { id } = await ctx.params;
+
+  if (!id) {
+    return NextResponse.json({ error: "Patient id is required" }, { status: 400 });
+  }
+
   try {
-    // ✅ Fetch patient
+    // Patient
     const patient = await db.patient.findUnique({
       where: { id },
     });
 
     if (!patient) {
-      return NextResponse.json(
-        { error: "Patient not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 });
     }
 
-    // ✅ Fetch documents for this patient
+    // Documents
     const documents = await db.patientDocument.findMany({
       where: { patientId: id },
       orderBy: { date: "desc" },
     });
 
-    return NextResponse.json({
-      patient,
-      documents,
-    });
+    return NextResponse.json({ patient, documents });
   } catch (error) {
     console.error("Error fetching patient:", error);
-
-    return NextResponse.json(
-      { error: "Failed to fetch patient" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch patient" }, { status: 500 });
   }
 }
 
-export async function PUT(req: Request, ctx: any) {
-  const params = await ctx.params;
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+export async function PUT(req: NextRequest, ctx: Ctx) {
+  const { id } = await ctx.params;
+
+  if (!id) {
+    return NextResponse.json({ error: "Patient id is required" }, { status: 400 });
+  }
+
+  let data: any;
   try {
-    const data = await req.json();
+    data = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  try {
+    // (optional but recommended) return 404 cleanly
+    const exists = await db.patient.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) {
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    }
 
     const updated = await db.patient.update({
       where: { id },
       data: {
-        name: data.name,
-        email: data.email || "",
-        phone: data.phone || "",
-        idnum: data.idnum || "",
-        lastVisit: data.lastVisit ? new Date(data.lastVisit) : null,
-        dob: data.dob ? new Date(data.dob) : null,
-        address: data.address || "",
-        status: data.status || "",
-        notes: data.notes || "",
-        gender: data.gender || "",
+        name: typeof data.name === "string" ? data.name : undefined,
+        email: typeof data.email === "string" ? data.email : undefined,
+        phone: typeof data.phone === "string" ? data.phone : undefined,
+        idnum: typeof data.idnum === "string" ? data.idnum : undefined,
+        lastVisit: toDateOrNull(data.lastVisit),
+        dob: toDateOrNull(data.dob),
+        address: typeof data.address === "string" ? data.address : undefined,
+        // IMPORTANT: if your Prisma schema has an enum for status, don't store ""
+        // Only set when provided, otherwise leave unchanged.
+        status: data.status ? data.status : undefined,
+        notes: typeof data.notes === "string" ? data.notes : undefined,
+        gender: typeof data.gender === "string" ? data.gender : undefined,
       },
     });
 
@@ -66,21 +88,25 @@ export async function PUT(req: Request, ctx: any) {
   }
 }
 
-export async function DELETE(_req: Request, ctx: any) {
-  const { params } = ctx;
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
-  try {
-    await db.patient.delete({
-      where: { id },
-    });
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
+  const { id } = await ctx.params;
 
-    return NextResponse.json({ message: "Patient deleted" });
+  if (!id) {
+    return NextResponse.json({ error: "Patient id is required" }, { status: 400 });
+  }
+
+  try {
+    // clean 404 instead of Prisma throwing
+    const exists = await db.patient.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) {
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    }
+
+    await db.patient.delete({ where: { id } });
+
+    return NextResponse.json({ ok: true, message: "Patient deleted" });
   } catch (error) {
     console.error("Error deleting patient:", error);
-    return NextResponse.json(
-      { error: "Delete failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }
-
