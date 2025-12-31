@@ -29,7 +29,7 @@ export default function DashboardClientLayout({
     const toggle = () => setIsOpen((prev) => !prev);
     const close = () => setIsOpen(false);
 
-    // Close sidebar on window resize (if switching to desktop)
+    // Close sidebar on window resize
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth >= 768) {
@@ -43,30 +43,30 @@ export default function DashboardClientLayout({
     return (
         <SidebarContext.Provider value={{ isOpen, toggle, close }}>
             <div className="min-h-dvh md:flex">
-                {/* Sticky sidebar (desktop) + Mobile Drawer (handled by Sidebar component specific logic or props) */}
+                {/* Mobile menu overlay */}
+                <div
+                    className={[
+                        "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 md:hidden",
+                        isOpen ? "opacity-100" : "pointer-events-none opacity-0",
+                    ].join(" ")}
+                    onClick={close}
+                    aria-hidden="true"
+                />
 
-                {/* We pass isOpen state to Sidebar if it accepts props, or we let Sidebar consume context if we refactor it.
-            For now, let's assume we will refactor Sidebar to accept props or strictly consume context.
-            Let's pass context logic into Sidebar by just rendering it here. 
-            The Sidebar component itself needs to change to respect 'isOpen'.
-        */}
-                <aside className="fixed inset-y-0 z-50 md:static md:h-dvh md:w-64 md:shrink-0">
+                {/* Sidebar Container */}
+                <aside
+                    className={[
+                        "fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out md:static md:w-64 md:translate-x-0",
+                        isOpen ? "translate-x-0" : "-translate-x-full",
+                    ].join(" ")}
+                >
                     <Sidebar />
                 </aside>
 
-                {/* Main content */}
+                {/* Content Area */}
                 <div className="min-w-0 flex-1 flex flex-col min-h-dvh">
                     {children}
                 </div>
-
-                {/* Mobile overlay - strictly controlled by context state */}
-                {isOpen && (
-                    <div
-                        className="fixed inset-0 z-40 bg-black/50 md:hidden animate-in fade-in"
-                        onClick={close}
-                        aria-hidden="true"
-                    />
-                )}
             </div>
         </SidebarContext.Provider>
     );

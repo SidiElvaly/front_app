@@ -41,22 +41,12 @@ export default function Sidebar() {
     <>
       {/* Sidebar Content */}
       <div
-        className={[
-          "h-full w-72 md:w-64",
-          "flex flex-col",
-          "bg-white border-r border-gray-100 shadow-lg md:shadow-none",
-          "transform transition-transform duration-300 ease-in-out",
-          // Positioning handling: 
-          // The parent <aside> in DashboardClientLayout handles the fixed positioning.
-          // We handle the translate.
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-        ].join(" ")}
+        className="flex h-full w-full flex-col bg-white border-r border-gray-100"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 shrink-0">
           <div className="pl-2 md:pl-0">
             <div className="text-xl font-bold text-emerald-600">{SITE_NAME}</div>
-            <div className="mt-1 text-xs text-gray-500 md:hidden">Navigation</div>
           </div>
 
           <button

@@ -35,15 +35,15 @@ export default function Topbar({ title }: { title: string }) {
           <button
             type="button"
             onClick={toggle}
-            className="md:hidden -ml-2 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+            className="md:hidden -ml-1 inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 active:scale-95 transition-all"
             aria-label="Open menu"
           >
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
 
-          {/* Brand badge hidden on very small screens */}
-          <span className="hidden sm:inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-emerald-600">
-            <span className="mr-1 h-2 w-2 rounded-full bg-emerald-500" />
+          {/* Brand badge hidden on mobile */}
+          <span className="hidden lg:inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold tracking-widest text-emerald-600">
+            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
             SANAMED
           </span>
 

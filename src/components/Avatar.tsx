@@ -13,8 +13,9 @@ export default function Avatar({ name, src }: { name: string; src?: string }) {
     );
   }
 
-  const initials = name
+  const initials = (name || "?")
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .slice(0, 2)
     .join("")
