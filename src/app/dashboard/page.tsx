@@ -255,15 +255,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Reminder Banner */}
-        <div className="card mb-5 flex items-start gap-3 border border-amber-100 bg-amber-50/60 px-4 py-3 text-xs text-amber-900">
-          <CalendarDays className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <p className="leading-relaxed">
-            <span className="font-semibold">Reminder:</span>{" "}
-            {data.highRiskPatients.length} high-risk patients have no upcoming
-            appointment.
-          </p>
-        </div>
+
 
         {/* KPI Cards */}
         <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
