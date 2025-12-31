@@ -160,14 +160,31 @@ export default function DashboardPage() {
 
     setLoading(true);
     fetch("/api/dashboard", { cache: "no-store" })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error("API error");
+        return res.json();
+      })
       .then((json) => {
-        setData(json);
+        setData({
+          totalPatients: json.totalPatients ?? 0,
+          newThisWeek: json.newThisWeek ?? 0,
+          appointmentsToday: json.appointmentsToday ?? 0,
+          pendingBills: json.pendingBills ?? 0,
+          highRiskPatients: json.highRiskPatients ?? [],
+          upcomingAppointments: json.upcomingAppointments ?? [],
+        });
         setLoading(false);
       })
       .catch((err) => {
         console.error("Dashboard error:", err);
-        setData(null);
+        setData({
+          totalPatients: 0,
+          newThisWeek: 0,
+          appointmentsToday: 0,
+          pendingBills: 0,
+          highRiskPatients: [],
+          upcomingAppointments: [],
+        });
         setLoading(false);
       });
   }, [status]);

@@ -168,13 +168,12 @@ export default function PatientsPage() {
 
   useEffect(() => {
     fetch("/api/patients", { cache: "no-store" })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error("API error");
+        return res.json();
+      })
       .then((data) => {
-        if (Array.isArray(data)) setPatients(data);
-        else {
-          console.error("Invalid API response:", data);
-          setPatients([]);
-        }
+        setPatients(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch((err) => {
@@ -303,16 +302,18 @@ export default function PatientsPage() {
             <div className="md:hidden px-3 py-3">
               <div className="grid gap-3">
                 {filtered.map((p) => (
-                  <Link
+                  <div
                     key={p.id}
-                    href={`/dashboard/patients/${p.id}`}
-                    className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition"
+                    className="group relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
+                      <Link
+                        href={`/dashboard/patients/${p.id}`}
+                        className="flex items-center gap-3 min-w-0"
+                      >
                         <Avatar name={p.name} />
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-slate-900">
+                          <div className="truncate text-sm font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors">
                             {p.name}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2">
@@ -324,38 +325,42 @@ export default function PatientsPage() {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
-                      <ChevronRight className="h-4 w-4 text-slate-400 mt-1" />
+                      <Link href={`/dashboard/patients/${p.id}`} className="mt-1">
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      </Link>
                     </div>
 
                     <div className="mt-3 space-y-2 text-xs text-slate-600">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Last visit</span>
-                        <span className="font-medium text-slate-700">
-                          {safeDate(p.lastVisit)}
-                        </span>
-                      </div>
-
-                      {(p.email || p.phone) && (
-                        <div className="space-y-1">
-                          {p.email && (
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-3.5 w-3.5 text-gray-400" />
-                              <span className="truncate">{p.email}</span>
-                            </div>
-                          )}
-                          {p.phone && (
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-3.5 w-3.5 text-gray-400" />
-                              <span className="truncate">{p.phone}</span>
-                            </div>
-                          )}
+                      <Link href={`/dashboard/patients/${p.id}`} className="block space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Last visit</span>
+                          <span className="font-medium text-slate-700">
+                            {safeDate(p.lastVisit)}
+                          </span>
                         </div>
-                      )}
+
+                        {(p.email || p.phone) && (
+                          <div className="space-y-1">
+                            {p.email && (
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-3.5 w-3.5 text-gray-400 underline-offset-4 group-hover:underline" />
+                                <span className="truncate">{p.email}</span>
+                              </div>
+                            )}
+                            {p.phone && (
+                              <div className="flex items-center gap-2">
+                                <Phone className="h-3.5 w-3.5 text-gray-400" />
+                                <span className="truncate">{p.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Link>
 
                       {/* Mobile actions */}
-                      <div className="pt-2 flex items-center justify-end gap-2">
+                      <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-50 mt-1">
                         <IconButton
                           title="Edit"
                           variant="primary"
@@ -367,16 +372,13 @@ export default function PatientsPage() {
                         <IconButton
                           title="Delete"
                           variant="danger"
-                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                            e.preventDefault(); // Prevent link navigation
-                            handleDeleteClick(p.id, p.name);
-                          }}
+                          onClick={() => handleDeleteClick(p.id, p.name)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </IconButton>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
 
                 {filtered.length === 0 && (

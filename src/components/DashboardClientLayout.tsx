@@ -56,8 +56,9 @@ export default function DashboardClientLayout({
                 {/* Sidebar Container */}
                 <aside
                     className={[
-                        "fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-300 ease-in-out md:static md:w-64 md:translate-x-0",
-                        isOpen ? "translate-x-0" : "-translate-x-full",
+                        "fixed inset-y-0 left-0 z-50 w-72 transition-all duration-300 ease-in-out",
+                        "md:static md:w-64 md:translate-x-0 md:opacity-100 md:visible md:pointer-events-auto",
+                        isOpen ? "translate-x-0 opacity-100 visible pointer-events-auto" : "-translate-x-full opacity-0 invisible pointer-events-none",
                     ].join(" ")}
                 >
                     <Sidebar />
