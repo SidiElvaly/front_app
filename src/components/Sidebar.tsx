@@ -47,6 +47,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-between px-4 pt-4 shrink-0">
           <div className="pl-2 md:pl-0">
             <div className="text-xl font-bold text-emerald-600">{SITE_NAME}</div>
+            <div className="mt-1 text-xs text-gray-500 md:hidden">Navigation</div>
           </div>
 
           <button
