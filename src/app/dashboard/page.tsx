@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Topbar from "@/components/Topbar";
 import Avatar from "@/components/Avatar";
+import StatusPill from "@/components/StatusPill";
 import {
   Users,
   CalendarDays,
@@ -99,7 +100,7 @@ function DashboardSkeleton() {
                 className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-slate-100 animate-pulse" />
                   <div className="min-w-0 space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
@@ -299,7 +300,7 @@ export default function DashboardPage() {
                         <span className="text-sm font-medium text-gray-800 truncate">
                           {p.name}
                         </span>
-                        <Badge tone="red">Risk: HIGH</Badge>
+                        <StatusPill value="HIGH" />
                       </div>
                       <div className="mt-0.5 text-[11px] text-gray-500">
                         Last visit:{" "}

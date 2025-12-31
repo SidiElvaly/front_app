@@ -39,3 +39,18 @@ export async function GET(_req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Failed to load document" }, { status: 500 });
   }
 }
+
+export async function DELETE(_req: Request, ctx: Ctx) {
+  try {
+    const { docId } = await ctx.params;
+
+    await db.patientDocument.delete({
+      where: { id: docId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Delete failed:", err);
+    return NextResponse.json({ error: "Failed to delete document" }, { status: 500 });
+  }
+}

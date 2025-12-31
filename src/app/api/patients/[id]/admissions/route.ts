@@ -4,13 +4,20 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
+/* ---------------- Helpers ---------------- */
+const emptyToUndefined = (v: unknown) => {
+  if (typeof v !== "string") return v;
+  const t = v.trim();
+  return t === "" ? undefined : t;
+};
+
 const AdmissionSchema = z.object({
-  visitDate: z.string().min(1, "visitDate is required"), // ISO string from input date
-  reason: z.string().min(2, "reason is required"),
-  currentDiagnosis: z.string().min(2, "currentDiagnosis is required"),
-  medicalHistory: z.string().optional(),
-  
-  notes: z.string().optional(), // optional extra notes to append to patient.notes
+  visitDate: z.preprocess(emptyToUndefined, z.string().min(1, "visitDate is required")), // ISO string from input date
+  reason: z.preprocess(emptyToUndefined, z.string().min(2, "reason is required")),
+  currentDiagnosis: z.preprocess(emptyToUndefined, z.string().min(2, "currentDiagnosis is required")),
+  medicalHistory: z.preprocess(emptyToUndefined, z.string().optional()),
+
+  notes: z.preprocess(emptyToUndefined, z.string().optional()), // optional extra notes to append to patient.notes
 });
 
 // GET: list admissions
@@ -33,7 +40,7 @@ export async function GET(
         reason: true,
         currentDiagnosis: true,
         medicalHistory: true,
-        
+
         createdAt: true,
         createdByEmail: true,
       },
@@ -95,7 +102,7 @@ export async function POST(
         reason: data.reason,
         currentDiagnosis: data.currentDiagnosis,
         medicalHistory: data.medicalHistory ?? null,
-       
+
         createdByEmail: session.user?.email ?? null,
       },
     });
@@ -120,7 +127,7 @@ export async function POST(
       where: { id: patientId },
       data: {
         lastVisit: visitDate,
-        
+
         notes: appended,
       },
     });

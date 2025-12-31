@@ -81,7 +81,7 @@ export default function AdmissionPage({ params }: { params: Promise<{ id: string
           <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-4 py-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-slate-900">Reception / Admission</h2>
-              
+
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -132,6 +132,7 @@ export default function AdmissionPage({ params }: { params: Promise<{ id: string
                     required
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">Required. The date the patient visited.</p>
               </div>
 
               <div className="space-y-1">
@@ -147,6 +148,7 @@ export default function AdmissionPage({ params }: { params: Promise<{ id: string
                     required
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">Required. Primary complaint or reason for visit.</p>
               </div>
 
               <div className="space-y-1">
@@ -162,6 +164,7 @@ export default function AdmissionPage({ params }: { params: Promise<{ id: string
                     required
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">Required. Diagnosis determined during visit.</p>
               </div>
 
               <div className="space-y-1">
@@ -171,6 +174,7 @@ export default function AdmissionPage({ params }: { params: Promise<{ id: string
                   value={extraNotes}
                   onChange={(e) => setExtraNotes(e.target.value)}
                 />
+                <p className="mt-1 text-xs text-slate-500">Optional. Any other observations.</p>
               </div>
             </div>
 

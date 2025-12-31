@@ -3,10 +3,12 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Bell } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
+import { useSidebar } from "./DashboardClientLayout";
 
 export default function Topbar({ title }: { title: string }) {
   const { data: session } = useSession();
+  const { toggle } = useSidebar();
   const userName = session?.user?.name ?? "Guest";
 
   const initials =
@@ -24,12 +26,21 @@ export default function Topbar({ title }: { title: string }) {
         className="
           flex items-center justify-between gap-3
           px-4 py-3
-          pl-14 md:pl-6
           sm:px-4 md:px-6
         "
       >
         {/* LEFT */}
         <div className="flex min-w-0 items-center gap-3">
+          {/* Hamburger (Mobile) */}
+          <button
+            type="button"
+            onClick={toggle}
+            className="md:hidden -ml-2 inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
+
           {/* Brand badge hidden on very small screens */}
           <span className="hidden sm:inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-emerald-600">
             <span className="mr-1 h-2 w-2 rounded-full bg-emerald-500" />

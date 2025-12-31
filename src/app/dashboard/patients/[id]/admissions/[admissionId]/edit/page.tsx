@@ -4,6 +4,7 @@ import { useEffect, useState, use as usePromise, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Topbar from "@/components/Topbar";
 import { CalendarDays, FileText, Stethoscope, ArrowLeft, Save } from "lucide-react";
+import FormSkeleton from "@/components/FormSkeleton";
 
 type Admission = {
   id: string;
@@ -100,11 +101,15 @@ export default function EditAdmissionPage({
     }
   }
 
+  // ...
+
+  // ...
+
   if (loading) {
     return (
       <main className="w-full">
         <Topbar title="Edit admission" />
-        <div className="px-4 py-6 text-sm text-slate-500">Loading...</div>
+        <FormSkeleton />
       </main>
     );
   }
@@ -169,6 +174,7 @@ export default function EditAdmissionPage({
                     required
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">Required. The date the patient visited.</p>
               </div>
 
               <div className="space-y-1">
@@ -184,6 +190,7 @@ export default function EditAdmissionPage({
                     required
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">Required. Primary complaint or reason for visit.</p>
               </div>
 
               <div className="space-y-1">
@@ -199,6 +206,7 @@ export default function EditAdmissionPage({
                     required
                   />
                 </div>
+                <p className="mt-1 text-xs text-slate-500">Required. Diagnosis determined during visit.</p>
               </div>
 
               <div className="space-y-1">
@@ -210,6 +218,7 @@ export default function EditAdmissionPage({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
+                <p className="mt-1 text-xs text-slate-500">Optional. Will be appended to the patient&apos;s main notes file.</p>
               </div>
             </div>
 

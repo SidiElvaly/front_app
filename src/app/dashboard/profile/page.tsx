@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, FormEvent } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Topbar from "@/components/Topbar";
 import { Camera, LogOut, MapPin, Mail, Phone, ShieldCheck, User2, X } from "lucide-react";
+import { toast } from "sonner";
 /* ---------- Skeleton ---------- */
 function ProfileSkeleton() {
   return (
@@ -144,13 +145,15 @@ export default function ProfilePage() {
       body: JSON.stringify(payload),
     });
 
-    alert("✅ Profile updated!");
+
+
+    toast.success("Profile updated successfully!");
   };
 
   // Change password
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
-      alert("❌ Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -161,14 +164,14 @@ export default function ProfilePage() {
     });
 
     if (res.ok) {
-      alert("✅ Password updated");
+      toast.success("Password updated successfully");
       setShowPasswordModal(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } else {
       const err = await res.json();
-      alert("❌ " + err.error);
+      toast.error(err.error || "Failed to update password");
     }
   };
 
@@ -283,6 +286,7 @@ export default function ProfilePage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
+                <p className="mt-1 text-[11px] text-slate-400">Required. Your full display name.</p>
               </div>
 
               {/* Email */}
@@ -310,6 +314,7 @@ export default function ProfilePage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
+                <p className="mt-1 text-[11px] text-slate-400">Optional. Contact phone number.</p>
               </div>
 
               {/* Address */}
@@ -324,6 +329,7 @@ export default function ProfilePage() {
                     className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
+                <p className="mt-1 text-[11px] text-slate-400">Optional. City or physical address.</p>
               </div>
 
               {/* Security */}

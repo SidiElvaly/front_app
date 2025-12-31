@@ -91,14 +91,12 @@ function TinySwitch({
       aria-pressed={checked}
     >
       <span
-        className={`h-3.5 w-6 rounded-full transition-colors ${
-          checked ? "bg-emerald-500" : "bg-gray-300"
-        }`}
+        className={`h-3.5 w-6 rounded-full transition-colors ${checked ? "bg-emerald-500" : "bg-gray-300"
+          }`}
       >
         <span
-          className={`ml-[2px] mt-[2px] block h-2.5 w-2.5 rounded-full bg-white transition-transform ${
-            checked ? "translate-x-3" : ""
-          }`}
+          className={`ml-[2px] mt-[2px] block h-2.5 w-2.5 rounded-full bg-white transition-transform ${checked ? "translate-x-3" : ""
+            }`}
         />
       </span>
       {label}
@@ -256,6 +254,7 @@ export default function SignInClient({
                   autoComplete="email"
                   inputMode="email"
                 />
+                <p className="mt-1 text-[11px] text-slate-400">Enter the email associated with your account.</p>
               </div>
 
               {/* Password */}
@@ -282,6 +281,7 @@ export default function SignInClient({
                     {showPassword ? "Hide" : "Show"}
                   </button>
                 </div>
+                <p className="mt-1 text-[11px] text-slate-400">Your secure password.</p>
               </div>
 
               {/* Remember / Forgot (stack on very small screens) */}

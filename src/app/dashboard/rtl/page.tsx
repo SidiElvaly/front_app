@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Topbar from "@/components/Topbar";
 import { CalendarDays, Users, FileText, AlertCircle } from "lucide-react";
+import StatusPill from "@/components/StatusPill";
+import Avatar from "@/components/Avatar";
 
 
 
@@ -216,14 +218,7 @@ export default function RTLPreviewPage() {
                   className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-xs font-semibold text-rose-600">
-                      {p.name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </div>
+                    <Avatar name={p.name} />
 
                     <div className="min-w-0 text-right">
                       <div className="truncate text-sm font-medium text-slate-900">
@@ -235,9 +230,7 @@ export default function RTLPreviewPage() {
                     </div>
                   </div>
 
-                  <span className="inline-flex w-fit items-center rounded-full bg-rose-50 px-3 py-1 text-[11px] font-medium text-rose-600">
-                    خطر مرتفع
-                  </span>
+                  <StatusPill value="HIGH" />
                 </div>
               ))}
 

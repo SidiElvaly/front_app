@@ -17,18 +17,24 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { ChangeEvent } from "react";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import StatusPill from "@/components/StatusPill";
+import IconButton from "@/components/IconButton";
+
+import Skeleton from "@/components/Skeleton";
 
 function PatientsSkeleton() {
   return (
     <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
       <div className="bg-brand px-4 py-4 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="h-10 w-full sm:w-80 rounded-xl bg-white/15 animate-pulse" />
+          <Skeleton className="h-10 w-full sm:w-80 rounded-xl bg-white/15" />
           <div className="flex flex-wrap items-center gap-2">
-            <div className="h-10 w-28 rounded-xl bg-white/20 animate-pulse" />
-            <div className="h-10 w-28 rounded-xl bg-white/10 border border-white/20 animate-pulse" />
-            <div className="h-10 w-28 rounded-xl bg-white/10 border border-white/20 animate-pulse" />
+            <Skeleton className="h-10 w-28 rounded-xl bg-white/20" />
+            <Skeleton className="h-10 w-28 rounded-xl bg-white/10 border border-white/20" />
+            <Skeleton className="h-10 w-28 rounded-xl bg-white/10 border border-white/20" />
           </div>
         </div>
       </div>
@@ -42,32 +48,32 @@ function PatientsSkeleton() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-10 w-10 rounded-full bg-slate-100" />
                   <div className="min-w-0">
-                    <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                    <Skeleton className="h-3 w-40 rounded bg-slate-100" />
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <div className="h-6 w-24 rounded-full bg-slate-100 animate-pulse" />
-                      <div className="h-6 w-20 rounded-full bg-slate-100 animate-pulse" />
+                      <Skeleton className="h-6 w-24 rounded-full bg-slate-100" />
+                      <Skeleton className="h-6 w-20 rounded-full bg-slate-100" />
                     </div>
                   </div>
                 </div>
-                <div className="h-4 w-4 rounded bg-slate-100 animate-pulse" />
+                <Skeleton className="h-4 w-4 rounded bg-slate-100" />
               </div>
 
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
-                  <div className="h-3 w-20 rounded bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-3 w-16 rounded bg-slate-100" />
+                  <Skeleton className="h-3 w-20 rounded bg-slate-100" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-3 w-56 rounded bg-slate-100 animate-pulse" />
-                  <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-3 w-56 rounded bg-slate-100" />
+                  <Skeleton className="h-3 w-40 rounded bg-slate-100" />
                 </div>
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-2">
-                <div className="h-8 w-8 rounded-lg bg-slate-100 animate-pulse" />
-                <div className="h-8 w-8 rounded-lg bg-slate-100 animate-pulse" />
+                <Skeleton className="h-8 w-8 rounded-lg bg-slate-100" />
+                <Skeleton className="h-8 w-8 rounded-lg bg-slate-100" />
               </div>
             </div>
           ))}
@@ -94,29 +100,29 @@ function PatientsSkeleton() {
               >
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-slate-100 animate-pulse" />
+                    <Skeleton className="h-10 w-10 rounded-full bg-slate-100" />
                     <div className="min-w-0 flex-1">
-                      <div className="h-3 w-40 rounded bg-slate-100 animate-pulse" />
-                      <div className="mt-2 h-3 w-56 rounded bg-slate-100 animate-pulse" />
+                      <Skeleton className="h-3 w-40 rounded bg-slate-100" />
+                      <div className="mt-2 h-3 w-56 rounded bg-slate-100" />
                     </div>
                   </div>
                 </td>
                 <td className="px-3 py-3">
-                  <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-3 w-28 rounded bg-slate-100" />
                 </td>
                 <td className="px-3 py-3">
-                  <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-3 w-24 rounded bg-slate-100" />
                 </td>
                 <td className="px-3 py-3">
-                  <div className="h-3 w-20 rounded bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-3 w-20 rounded bg-slate-100" />
                 </td>
                 <td className="px-3 py-3">
-                  <div className="h-6 w-24 rounded-full bg-slate-100 animate-pulse" />
+                  <Skeleton className="h-6 w-24 rounded-full bg-slate-100" />
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex justify-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-slate-100 animate-pulse" />
-                    <div className="h-8 w-8 rounded-lg bg-slate-100 animate-pulse" />
+                    <Skeleton className="h-8 w-8 rounded-lg bg-slate-100" />
+                    <Skeleton className="h-8 w-8 rounded-lg bg-slate-100" />
                   </div>
                 </td>
               </tr>
@@ -129,60 +135,9 @@ function PatientsSkeleton() {
 }
 
 /* ----------------- Small UI helpers ----------------- */
-function IconButton({
-  title,
-  onClick,
-  variant = "neutral",
-  children,
-}: {
-  title: string;
-  onClick?: () => void;
-  variant?: "neutral" | "primary" | "danger";
-  children: React.ReactNode;
-}) {
-  const base =
-    "inline-flex h-8 w-8 items-center justify-center rounded-lg border transition shadow-sm";
-  const styles =
-    variant === "primary"
-      ? "border-brand/40 bg-brand/10 text-brand hover:bg-brand/20"
-      : variant === "danger"
-      ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
-      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50";
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className={`${base} ${styles}`}
-    >
-      {children}
-    </button>
-  );
-}
 
-function StatusPill({ value }: { value: string }) {
-  const v = value?.toLowerCase();
-  const map =
-    v === "high"
-      ? { label: "Risk: HIGH", cls: "bg-rose-50 text-rose-700 border-rose-200" }
-      : v === "medium"
-      ? {
-          label: "Risk: MEDIUM",
-          cls: "bg-amber-50 text-amber-700 border-amber-200",
-        }
-      : {
-          label: "Risk: LOW",
-          cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        };
 
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-medium ${map.cls}`}
-    >
-      {map.label}
-    </span>
-  );
-}
+
 
 function safeDate(d: any) {
   if (!d) return "—";
@@ -207,6 +162,9 @@ export default function PatientsPage() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
+
+  const [deleteData, setDeleteData] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/patients", { cache: "no-store" })
@@ -251,21 +209,34 @@ export default function PatientsPage() {
     }
   };
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete ${name}? This action cannot be undone.`)) return;
+  function handleDeleteClick(id: string, name: string) {
+    setDeleteData({ id, name });
+  }
 
-    const res = await fetch(`/api/patients/${id}`, { method: "DELETE" });
-    if (!res.ok) return alert("Failed to delete patient");
+  async function handleConfirmDelete() {
+    if (!deleteData) return;
+    setIsDeleting(true);
 
-    setPatients((prev) => prev.filter((p) => p.id !== id));
+    try {
+      const res = await fetch(`/api/patients/${deleteData.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete patient");
+
+      setPatients((prev) => prev.filter((p) => p.id !== deleteData.id));
+      setDeleteData(null);
+      toast.success("Patient deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete patient");
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   const filtered =
     q.trim() === ""
       ? patients
       : patients.filter((p) =>
-          (p.name ?? "").toLowerCase().includes(q.toLowerCase())
-        );
+        (p.name ?? "").toLowerCase().includes(q.toLowerCase())
+      );
 
   return (
     <main className="w-full">
@@ -396,7 +367,10 @@ export default function PatientsPage() {
                         <IconButton
                           title="Delete"
                           variant="danger"
-                          onClick={() => handleDelete(p.id, p.name)}
+                          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            e.preventDefault(); // Prevent link navigation
+                            handleDeleteClick(p.id, p.name);
+                          }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </IconButton>
@@ -484,7 +458,7 @@ export default function PatientsPage() {
                           <IconButton
                             title="Delete"
                             variant="danger"
-                            onClick={() => handleDelete(p.id, p.name)}
+                            onClick={() => handleDeleteClick(p.id, p.name)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </IconButton>
@@ -509,6 +483,15 @@ export default function PatientsPage() {
           </div>
         )}
       </section>
+
+      <DeleteConfirmationModal
+        isOpen={!!deleteData}
+        onClose={() => setDeleteData(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Patient"
+        message={`Are you sure you want to delete ${deleteData?.name ?? "this patient"}? This action cannot be undone and will remove all associated data.`}
+        isDeleting={isDeleting}
+      />
     </main>
   );
 }
