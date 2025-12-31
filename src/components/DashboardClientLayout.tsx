@@ -48,22 +48,20 @@ export default function DashboardClientLayout({
                     <Sidebar />
                 </aside>
 
-                {/* MOBILE SIDEBAR (DRAWER) */}
-                <div
-                    className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${isOpen ? "visible" : "invisible"}`}
-                >
-                    {/* Overlay */}
-                    <div
-                        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}
-                        onClick={close}
-                    />
-                    {/* Slider */}
-                    <div
-                        className={`absolute inset-y-0 left-0 w-72 bg-white shadow-2xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
-                    >
-                        <Sidebar />
+                {/* MOBILE SIDEBAR (DRAWER) - Only render when open to prevent blocking */}
+                {isOpen && (
+                    <div className="fixed inset-0 z-[100] md:hidden">
+                        {/* Overlay */}
+                        <div
+                            className="absolute inset-0 bg-black/40 animate-in fade-in duration-300"
+                            onClick={close}
+                        />
+                        {/* Slider */}
+                        <div className="absolute inset-y-0 left-0 w-72 bg-white shadow-2xl animate-in slide-in-from-left duration-300">
+                            <Sidebar />
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* MAIN CONTENT AREA */}
                 <div className="flex-1 flex flex-col min-w-0 max-h-screen">
