@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { addHours, isBefore, addDays } from "date-fns";
-
-export const runtime = "nodejs";
+import { MedicationFrequency } from "@prisma/client";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -13,80 +12,113 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const {
-    patientId,
-    drugName,
-    dosage,
-    frequency,
-    startDate,
-    endDate,
-    notes,
-  } = body;
-
-  // Validation
-  if (!patientId || !drugName || !dosage || !frequency || !startDate) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-  }
-
-  const doctor = await db.user.findUnique({
-    where: { email: session.user.email },
-  });
-
-  if (!doctor) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
   try {
-    const plan = await db.medicationPlan.create({
-      data: {
-        patientId,
-        prescribedById: doctor.id,
-        drugName,
-        dosage,
-        frequency,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
-        notes,
-      },
-    });
+    const body = await req.json();
+    const { patientId, drugName, dosage, frequency, startDate, endDate, notes } = body;
 
-    // Generate doses based on the frequency
-    const doses = generateDoses(plan);
-
-    if (doses.length > 0) {
-      await db.medicationDose.createMany({ data: doses });
+    if (!patientId || !drugName || !dosage || !frequency || !startDate) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    return NextResponse.json(plan, { status: 201 });
+    const doctor = await db.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!doctor) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    /* -------------------- SAFE ENUM NORMALIZATION -------------------- */
+    const FREQUENCY_MAP: Record<string, MedicationFrequency> = {
+      DAILY: MedicationFrequency.DAILY,
+      EVERY_8_HOURS: MedicationFrequency.EVERY_8_HOURS,
+      EVERY_12_HOURS: MedicationFrequency.EVERY_12_HOURS,
+      CUSTOM: MedicationFrequency.CUSTOM,
+
+      // optional UI-friendly aliases
+      daily: MedicationFrequency.DAILY,
+      "8h": MedicationFrequency.EVERY_8_HOURS,
+      "12h": MedicationFrequency.EVERY_12_HOURS,
+    };
+
+    const normalizedFrequency = FREQUENCY_MAP[frequency];
+
+    if (!normalizedFrequency) {
+      return NextResponse.json(
+        { error: "Invalid medication frequency" },
+        { status: 400 }
+      );
+    }
+
+    /* -------------------- TRANSACTION -------------------- */
+    const result = await db.$transaction(async (tx) => {
+      const plan = await tx.medicationPlan.create({
+        data: {
+          patientId,
+          prescribedById: doctor.id,
+          drugName,
+          dosage,
+          frequency: normalizedFrequency,
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : null,
+          notes,
+        },
+      });
+
+      const dosesData = generateDoses(plan);
+
+      if (dosesData.length > 0) {
+        await tx.medicationDose.createMany({
+          data: dosesData,
+        });
+      }
+
+      return plan;
+    });
+
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    console.error("Failed to create plan:", error);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+    console.error("Medication plan creation failed:", error);
+    return NextResponse.json(
+      { error: "Failed to save prescription" },
+      { status: 500 }
+    );
   }
 }
 
-/* ---------- Optimized Dose generation ---------- */
+/* -------------------- DOSE GENERATION -------------------- */
+function generateDoses(plan: {
+  id: string;
+  frequency: MedicationFrequency;
+  startDate: Date;
+  endDate?: Date | null;
+}) {
+  const doses: any[] = [];
 
-function generateDoses(plan: any) {
-  const doses = [];
-  const start = new Date(plan.startDate);
-  
-  // If no end date is provided, default to a 7-day schedule
-  const end = plan.endDate ? new Date(plan.endDate) : addDays(start, 7);
+  let cursor = new Date(plan.startDate);
+  const endLimit = plan.endDate
+    ? new Date(plan.endDate)
+    : addDays(cursor, 14);
 
   let intervalHours = 24;
+
   switch (plan.frequency) {
-    case "EVERY_12_HOURS": intervalHours = 12; break;
-    case "EVERY_8_HOURS":  intervalHours = 8; break;
-    case "EVERY_6_HOURS":  intervalHours = 6; break; // Added this
-    case "DAILY":          intervalHours = 24; break;
+    case MedicationFrequency.EVERY_8_HOURS:
+      intervalHours = 8;
+      break;
+    case MedicationFrequency.EVERY_12_HOURS:
+      intervalHours = 12;
+      break;
+    case MedicationFrequency.CUSTOM:
+      intervalHours = 6; // example: q6h
+      break;
+    case MedicationFrequency.DAILY:
+    default:
+      intervalHours = 24;
   }
 
-  let cursor = start;
-
-  // Safety: Limit to 100 doses to prevent infinite loops/memory issues
-  while (isBefore(cursor, end) || cursor.getTime() === end.getTime()) {
-    if (doses.length >= 100) break; 
+  while (isBefore(cursor, endLimit) || cursor.getTime() === endLimit.getTime()) {
+    if (doses.length >= 300) break;
 
     doses.push({
       medicationPlanId: plan.id,

@@ -145,7 +145,7 @@ export default function NewMedicationPlan({ params }: { params: Promise<{ id: st
                       <option value="DAILY">Once daily</option>
                       <option value="EVERY_12_HOURS">Every 12 hours</option>
                       <option value="EVERY_8_HOURS">Every 8 hours</option>
-                      <option value="EVERY_6_HOURS">Every 6 hours</option>
+                      <option value="CUSTOM">Every 6 hours</option>
                     </select>
                     <ChevronRight className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 rotate-90 text-slate-400 pointer-events-none" />
                   </div>
