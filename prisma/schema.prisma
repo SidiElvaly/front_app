@@ -15,17 +15,21 @@ model User {
   phone        String?
   address      String?
   image        String?
+  role         UserRole @default(NURSE)
   createdAt    DateTime @default(now())
+
+  recordedVitals    VitalSign[]      @relation("RecordedVitals")
+  prescribedPlans   MedicationPlan[] @relation("PrescribedPlans")
+  administeredDoses MedicationDose[] @relation("AdministeredDoses")
 }
 
-
 model Patient {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  name      String
-  email     String?      // ✅ optional (real world)
-  phone     String?      // ✅ optional
-  idnum     String?      // ✅ optional (MRN)
+  name  String
+  email String?
+  phone String?
+  idnum String?
 
   lastVisit DateTime?
   dob       DateTime?
@@ -34,103 +38,159 @@ model Patient {
   gender    String?
   status    PatientStatus @default(LOW)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   updatedAt DateTime? @default(now()) @updatedAt
 
-
-  documents   PatientDocument[]
-  admissions  Admission[]
+  documents    PatientDocument[]
+  admissions   Admission[]
   appointments Appointment[]
   invoices     Invoice[]
+
+  vitalSigns      VitalSign[]
+  medicationPlans MedicationPlan[]
 }
 
-
 model PatientDocument {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  patientId  String   @db.ObjectId
-  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String  @db.ObjectId
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   title      String
   date       DateTime
-  isFavorite Boolean @default(false)
+  isFavorite Boolean  @default(false)
 
-  
-  fileName   String
-  fileUrl    String?   // S3/R2/Cloudinary URL
-  mimeType   String?   // application/pdf
-  sizeBytes  Int?      // for UI/info
+  fileName  String
+  fileUrl   String?
+  mimeType  String?
+  sizeBytes Int?
+  fileData  String?
 
-  
-  fileData   String?   // keep temporarily if you must migrate, remove later
-
-  createdAt  DateTime @default(now())
+  createdAt DateTime  @default(now())
   updatedAt DateTime? @default(now()) @updatedAt
-
 
   @@index([patientId])
 }
 
-
 model Admission {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  patientId        String   @db.ObjectId
-  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String  @db.ObjectId
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   visitDate        DateTime
   reason           String
   currentDiagnosis String
   medicalHistory   String?
- 
 
-  createdByEmail   String?
-  createdAt        DateTime @default(now())
-  updatedAt DateTime? @default(now()) @updatedAt
-
+  createdByEmail String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @default(now()) @updatedAt
 
   @@index([patientId])
   @@index([visitDate])
 }
 
-
 model Appointment {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  patientId  String   @db.ObjectId
-  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String  @db.ObjectId
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  date       DateTime
-  room       String?
-  type       AppointmentType
-  status     AppointmentStatus @default(SCHEDULED)
+  date   DateTime
+  room   String?
+  type   AppointmentType
+  status AppointmentStatus @default(SCHEDULED)
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime  @default(now())
   updatedAt DateTime? @default(now()) @updatedAt
-
 
   @@index([patientId])
   @@index([date])
 }
 
-
 model Invoice {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  patientId  String   @db.ObjectId
-  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String  @db.ObjectId
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  amount     Float
-  status     InvoiceStatus @default(PENDING)
-  dueDate    DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt DateTime? @default(now()) @updatedAt
-
+  amount    Float
+  status    InvoiceStatus @default(PENDING)
+  dueDate   DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime?     @default(now()) @updatedAt
 
   @@index([patientId])
   @@index([createdAt])
 }
 
+model VitalSign {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  patientId String  @db.ObjectId
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  recordedById String @db.ObjectId
+  recordedBy   User   @relation("RecordedVitals", fields: [recordedById], references: [id])
+
+  systolicBP  Int?
+  diastolicBP Int?
+  heartRate   Int?
+  temperature Float?
+  spo2        Int?
+
+  roomNumber String?
+  bedNumber  String?
+
+  recordedAt DateTime @default(now())
+
+  @@index([patientId, recordedAt])
+}
+
+model MedicationPlan {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  patientId String  @db.ObjectId
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  prescribedById String @db.ObjectId
+  prescribedBy   User   @relation("PrescribedPlans", fields: [prescribedById], references: [id])
+
+  drugName    String
+  dosage      String
+  frequency   MedicationFrequency
+  timesPerDay Int?
+  notes       String?
+
+  startDate DateTime
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+
+  doses MedicationDose[]
+
+  @@index([patientId])
+}
+
+model MedicationDose {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  medicationPlanId String         @db.ObjectId
+  medicationPlan   MedicationPlan @relation(fields: [medicationPlanId], references: [id], onDelete: Cascade)
+
+  scheduledAt DateTime
+
+  status DoseStatus @default(PENDING)
+
+  administeredById String? @db.ObjectId
+  administeredBy   User?   @relation("AdministeredDoses", fields: [administeredById], references: [id])
+
+  administeredAt DateTime?
+
+  @@index([scheduledAt])
+}
 
 enum PatientStatus {
   LOW
@@ -153,4 +213,23 @@ enum AppointmentStatus {
 enum InvoiceStatus {
   PENDING
   PAID
+}
+
+enum MedicationFrequency {
+  DAILY
+  EVERY_8_HOURS
+  EVERY_12_HOURS
+  CUSTOM
+}
+
+enum DoseStatus {
+  PENDING
+  GIVEN
+  MISSED
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  NURSE
 }
