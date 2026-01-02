@@ -2,102 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Topbar from "@/components/Topbar";
-import { CalendarDays, Users, FileText, AlertCircle } from "lucide-react";
+import { CalendarDays, Users, FileText, AlertCircle, Phone, Clock, ChevronLeft } from "lucide-react";
 import StatusPill from "@/components/StatusPill";
 import Avatar from "@/components/Avatar";
-
-
-
-
-function RTLPreviewSkeleton() {
-  return (
-    <section dir="rtl" className="px-3 pb-8 pt-4 text-right sm:px-4 lg:px-6">
-      {/* Welcome banner */}
-      <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-card sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="h-3 w-64 max-w-full rounded bg-slate-100 animate-pulse" />
-            <div className="mt-2 h-6 w-28 rounded bg-slate-100 animate-pulse" />
-            <div className="mt-2 h-4 w-[520px] max-w-full rounded bg-slate-100 animate-pulse" />
-          </div>
-          <div className="sm:text-left">
-            <div className="h-7 w-28 rounded-full bg-slate-100 animate-pulse" />
-          </div>
-        </div>
-      </div>
-
-      {/* KPI grid */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="card p-4">
-            <div className="flex items-center justify-between">
-              <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
-              <div className="h-4 w-4 rounded bg-slate-100 animate-pulse" />
-            </div>
-            <div className="mt-3 h-8 w-20 rounded bg-slate-100 animate-pulse" />
-            <div className="mt-2 h-3 w-32 rounded bg-slate-100 animate-pulse" />
-          </div>
-        ))}
-      </div>
-
-      {/* Lower grid */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* High-risk patients */}
-        <div className="card p-4 sm:p-6">
-          <div className="h-4 w-60 rounded bg-slate-100 animate-pulse" />
-          <div className="mt-2 h-3 w-44 rounded bg-slate-100 animate-pulse" />
-
-          <div className="mt-4 divide-y divide-slate-100">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-9 w-9 rounded-full bg-slate-100 animate-pulse" />
-                  <div className="min-w-0">
-                    <div className="h-3 w-36 rounded bg-slate-100 animate-pulse" />
-                    <div className="mt-2 h-3 w-44 rounded bg-slate-100 animate-pulse" />
-                  </div>
-                </div>
-                <div className="h-7 w-20 rounded-full bg-slate-100 animate-pulse" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Today overview */}
-        <div className="card p-4 sm:p-6">
-          <div className="h-4 w-32 rounded bg-slate-100 animate-pulse" />
-          <div className="mt-2 h-3 w-72 max-w-full rounded bg-slate-100 animate-pulse" />
-
-          <div className="mt-5 space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between gap-3">
-                <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
-                <div className="h-4 w-10 rounded bg-slate-100 animate-pulse" />
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <div className="h-3 w-28 rounded bg-slate-100 animate-pulse" />
-            <div className="mt-3 space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
-                  <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
-                  <div className="h-6 w-16 rounded-full bg-slate-100 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+import Link from "next/link";
 
 export default function RTLPreviewPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
 
   useEffect(() => {
     fetch("/api/dashboard", { cache: "no-store" })
@@ -114,9 +26,9 @@ export default function RTLPreviewPage() {
 
   if (loading || !data) {
     return (
-      <main className="w-full">
-        <Topbar title="RTL Preview" />
-        <RTLPreviewSkeleton />
+      <main className="w-full min-h-screen bg-slate-50/50">
+        <Topbar title="عرض RTL" />
+        <div className="p-10 text-center text-slate-400">جاري التحميل...</div>
       </main>
     );
   }
@@ -125,167 +37,123 @@ export default function RTLPreviewPage() {
   const appointmentsToday = data.appointmentsToday || 0;
 
   return (
-    <main className="w-full">
-      <Topbar title="RTL Preview" />
+    <main className="w-full min-h-screen bg-slate-50/50">
+      <Topbar title="لوحة التحكم" />
 
-      <section dir="rtl" className="px-3 pb-8 pt-4 text-right sm:px-4 lg:px-6">
+      <section dir="rtl" className="mx-auto w-full max-w-7xl px-3 pb-10 pt-4 text-right sm:px-4 lg:px-6">
         {/* Welcome Banner */}
-        <div className="mb-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-card sm:p-5">
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-xs text-slate-400">
-                لوحة القيادة <span className="mx-1">›</span> عرض من اليمين إلى اليسار
+              <p className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                العيادة <span className="text-slate-300">/</span> نظرة عامة
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-900 sm:text-xl">
-                مرحباً بك
+              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                مرحباً بك مجدداً
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                هذا هو نفس تصميم لوحة التحكم، لكن باتجاه من اليمين إلى اليسار وببيانات حقيقية.
+              <p className="mt-1 text-xs text-slate-500">
+                إليك ملخص سريع لحالة المرضى والمواعيد لهذا اليوم.
               </p>
             </div>
-
-            <div className="sm:text-left">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-600">
+            <div className="flex-shrink-0">
+               <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-600 border border-emerald-100">
                 <AlertCircle size={14} />
-                وضع العرض RTL
+                النظام يعمل بشكل جيد
               </span>
             </div>
           </div>
         </div>
 
-        {/* KPI cards: 1 col (mobile) / 2 cols (sm) / 4 cols (lg) */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card flex flex-col justify-between p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">إجمالي المرضى</span>
-              <Users className="h-4 w-4 text-emerald-500" />
+        {/* KPI Grid */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "إجمالي المرضى", value: data.totalPatients, sub: `+${data.newThisWeek} هذا الأسبوع`, icon: Users, color: "text-emerald-600 bg-emerald-50" },
+            { label: "زيارات اليوم", value: appointmentsToday, sub: "مواعيد مجدولة", icon: CalendarDays, color: "text-sky-600 bg-sky-50" },
+            { label: "مرضى جدد", value: data.newThisWeek, sub: "تمت إضافتهم حديثاً", icon: FileText, color: "text-violet-600 bg-violet-50" },
+            { label: "فواتير معلقة", value: data.pendingBills, sub: "تتطلب مراجعة", icon: AlertCircle, color: "text-amber-600 bg-amber-50" },
+          ].map((kpi, i) => (
+            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-slate-500">{kpi.label}</span>
+                <div className={`p-2 rounded-lg ${kpi.color} group-hover:scale-110 transition-transform`}>
+                  <kpi.icon size={18} />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-slate-900">{kpi.value}</div>
+              <p className="mt-1 text-[10px] font-medium text-slate-400">{kpi.sub}</p>
             </div>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">
-              {data.totalPatients}
-            </div>
-            <p className="mt-1 text-xs text-slate-400">+{data.newThisWeek} خلال هذا الأسبوع</p>
-          </div>
-
-          <div className="card flex flex-col justify-between p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">زيارات اليوم</span>
-              <CalendarDays className="h-4 w-4 text-sky-500" />
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">
-              {appointmentsToday}
-            </div>
-            <p className="mt-1 text-xs text-slate-400">متابعة المواعيد القادمة</p>
-          </div>
-
-          <div className="card flex flex-col justify-between p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">مرضى جدد هذا الأسبوع</span>
-              <FileText className="h-4 w-4 text-violet-500" />
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">
-              {data.newThisWeek}
-            </div>
-            <p className="mt-1 text-xs text-slate-400">ملفات تمّت إضافتها حديثاً</p>
-          </div>
-
-          <div className="card flex flex-col justify-between p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">فواتير معلّقة</span>
-              <FileText className="h-4 w-4 text-amber-500" />
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">
-              {data.pendingBills}
-            </div>
-            <p className="mt-1 text-xs text-slate-400">تتطلب مراجعة أو دفعاً</p>
-          </div>
+          ))}
         </div>
 
-        {/* Lower grid: stack on mobile, two columns on lg */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* High-risk patients */}
-          <div className="card p-4 sm:p-6">
-            <div className="mb-3">
-              <h3 className="text-sm font-semibold text-slate-900">
-                المرضى ذوو الأولوية – تركيز اليوم
-              </h3>
-              <p className="mt-1 text-xs text-slate-500">أعلى المرضى من حيث مستوى الخطورة.</p>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Improved Priority Patients List (Right Side in RTL) */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">المرضى ذوو الأولوية</h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">متابعة دقيقة للحالات الحرجة</p>
+              </div>
+              <Link href="/dashboard/patients" className="text-[11px] font-bold text-blue-600 flex items-center gap-1 hover:bg-blue-50 px-2 py-1 rounded-md transition-all">
+                عرض الكل <ChevronLeft size={14} />
+              </Link>
             </div>
 
             <div className="divide-y divide-slate-100">
               {highRisk.map((p: any) => (
-                <div
-                  key={p.id}
-                  className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar name={p.name} />
-
-                    <div className="min-w-0 text-right">
-                      <div className="truncate text-sm font-medium text-slate-900">
-                        {p.name}
-                      </div>
-                      <div className="truncate text-xs text-slate-500">
-                        {p.email ?? "لا يوجد بريد"}
-                      </div>
+                <div key={p.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50/50 transition-colors">
+                  <Avatar name={p.name} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-slate-900 truncate">{p.name}</span>
+                      <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
+                        {p.idnum || "بدون رقم"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-[10px] text-slate-400">
+                       <span className="flex items-center gap-1"><Phone size={12}/> {p.phone || "لا يوجد هاتف"}</span>
+                       <span className="flex items-center gap-1"><Clock size={12}/> آخر زيارة: {p.lastVisit ? new Date(p.lastVisit).toLocaleDateString('ar-SA') : "جديد"}</span>
                     </div>
                   </div>
-
-                  <StatusPill value="HIGH" />
+                  {/* Status pushed to the far left in RTL */}
+                  <div className="flex items-center">
+                    <div className="bg-rose-50 text-rose-700 border-rose-200 text-sm py-1 px-2 rounded-md">
+                      عالي      
+                    </div>
+                  </div>
                 </div>
               ))}
-
               {highRisk.length === 0 && (
-                <div className="py-4 text-center text-xs text-slate-500">
-                  لا يوجد مرضى عالي الخطورة.
-                </div>
+                <div className="py-12 text-center text-slate-400 text-xs italic">لا توجد حالات حرجة اليوم.</div>
               )}
             </div>
           </div>
 
-          {/* Today overview */}
-          <div className="card p-4 sm:p-6">
-            <h3 className="text-sm font-semibold text-slate-900">مواعيد اليوم</h3>
-            <p className="mb-4 mt-2 text-xs text-slate-500">
-              نظرة سريعة على حالة المواعيد في العيادة.
-            </p>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">إجمالي المواعيد</span>
-                <span className="font-semibold text-slate-900">{appointmentsToday}</span>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">المواعيد القادمة</span>
-                <span className="font-semibold text-slate-900">
-                  {data.upcomingAppointments?.length ?? 0}
-                </span>
-              </div>
+          {/* Appointments Section */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-fit">
+            <div className="p-5 border-b border-slate-100 bg-slate-50/30">
+              <h3 className="text-sm font-bold text-slate-900">مواعيد اليوم القادمة</h3>
             </div>
-
-            {/* Optional: compact list on mobile, same data */}
-            {Array.isArray(data.upcomingAppointments) && data.upcomingAppointments.length > 0 && (
-              <div className="mt-5 border-t border-slate-100 pt-4">
-                <div className="mb-2 text-xs font-semibold text-slate-700">
-                  القادمة (مختصر)
+            <div className="p-4 space-y-3">
+              {data.upcomingAppointments?.slice(0, 5).map((a: any) => (
+                <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100/50 hover:bg-white hover:shadow-sm transition-all">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold text-slate-800">
+                      {new Date(a.date).toLocaleDateString('ar-SA', { month: 'long', day: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      {a.room || "قاعة الانتظار"}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                    {a.type === 'CHECKUP' ? 'فحص' : a.type === 'EMERGENCY' ? 'طوارئ' : 'متابعة'}
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  {data.upcomingAppointments.slice(0, 4).map((a: any) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs"
-                    >
-                      <span className="text-slate-700">
-                        {new Date(a.date).toLocaleDateString()}
-                      </span>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-600">
-                        {a.type}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+              {(!data.upcomingAppointments || data.upcomingAppointments.length === 0) && (
+                <div className="py-6 text-center text-slate-400 text-[11px]">جدول المواعيد فارغ.</div>
+              )}
+            </div>
           </div>
         </div>
       </section>
