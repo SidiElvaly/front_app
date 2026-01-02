@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { patientId: string } }
+  { params }: { params: Promise<{ patientId: string }> } 
 ) {
   const session = await getServerSession(authOptions);
 
@@ -15,8 +15,10 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { patientId } = await params;
+
   const vitals = await db.vitalSign.findMany({
-    where: { patientId: params.patientId },
+    where: { patientId: patientId },
     orderBy: { recordedAt: "desc" },
     include: {
       recordedBy: {
