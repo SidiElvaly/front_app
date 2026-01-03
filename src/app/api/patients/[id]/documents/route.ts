@@ -1,6 +1,7 @@
 // src/app/api/patients/[id]/documents/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { decodeId } from "@/lib/obfuscation";
 
 export async function POST(req: Request, ctx: any) {
   const params = await ctx.params;
@@ -18,7 +19,9 @@ export async function POST(req: Request, ctx: any) {
     const buffer = Buffer.from(arrayBuffer);
 
     // ✅ Create document entry
-    const patientId = Array.isArray(params.id) ? params.id[0] : params.id;
+    const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+    const patientId = decodeId(rawId);
+    if (!patientId) return NextResponse.json({ error: "Invalid patient ID" }, { status: 400 });
 
     const newDoc = await db.patientDocument.create({
       data: {

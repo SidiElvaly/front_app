@@ -13,7 +13,10 @@ export async function POST(req: Request) {
   const { query } = (await req.json()) as { query?: string };
   if (!query?.trim()) return NextResponse.json({ results: [] });
 
-  const upstream = await fetch(`${base}/search`, {
+  const url = new URL("/search", base);
+  console.log("Upstream URL:", url.toString());
+
+  const upstream = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),

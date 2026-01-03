@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { decodeId } from "@/lib/obfuscation";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -99,7 +100,8 @@ const UpdatePatientSchema = z
 
 /* ---------------- GET ---------------- */
 export async function GET(_req: NextRequest, ctx: Ctx) {
-  const { id } = await ctx.params;
+  const { id: rawId } = await ctx.params;
+  const id = decodeId(rawId);
   if (!id) return NextResponse.json({ error: "Patient id is required" }, { status: 400 });
 
   try {
@@ -120,7 +122,8 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
 /* ---------------- PUT ---------------- */
 export async function PUT(req: NextRequest, ctx: Ctx) {
-  const { id } = await ctx.params;
+  const { id: rawId } = await ctx.params;
+  const id = decodeId(rawId);
   if (!id) return NextResponse.json({ error: "Patient id is required" }, { status: 400 });
 
   let body: unknown;
@@ -176,7 +179,8 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
 /* ---------------- DELETE ---------------- */
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
-  const { id } = await ctx.params;
+  const { id: rawId } = await ctx.params;
+  const id = decodeId(rawId);
   if (!id) return NextResponse.json({ error: "Patient id is required" }, { status: 400 });
 
   try {

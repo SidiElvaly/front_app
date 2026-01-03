@@ -12,6 +12,7 @@ import {
   Calendar,
 } from "lucide-react";
 import Skeleton from "@/components/Skeleton";
+import { decodeId } from "@/lib/obfuscation";
 
 type Vital = {
   id: string;
@@ -45,7 +46,8 @@ export default function VitalsHistory({
 }: {
   params: Promise<{ id: string }>; // Fixed: params is now a Promise in Next.js 15
 }) {
-  const { id } = use(params); // Unwrapping the promise
+  const { id: rawId } = use(params); // Unwrapping the promise
+  const id = React.useMemo(() => decodeId(rawId) || "", [rawId]);
   const [vitals, setVitals] = useState<Vital[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +76,7 @@ export default function VitalsHistory({
           <VitalsSkeleton />
         ) : (
           <div className="card overflow-hidden border border-slate-100 shadow-card bg-white rounded-2xl">
-            
+
             {/* Header - Styled to match Edit Patient */}
             <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-4 py-4 sm:px-6">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+
 import {
     FileText,
     Star,
@@ -9,9 +10,11 @@ import {
     Search,
     Trash2,
     Pencil,
+    Plus,
 } from "lucide-react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { toast } from "sonner";
+import { handleClientError } from "@/lib/client-error";
 
 /* ----------------- Types ----------------- */
 export type AdmissionStatus = "LOW" | "MEDIUM" | "HIGH";
@@ -76,7 +79,7 @@ function extractMetaFromText(text: string) {
 }
 
 /* ----------------- Proxy APIs ----------------- */
-async function callExtractFileAPI(file: File) {
+export async function callExtractFileAPI(file: File) {
     const fd = new FormData();
     fd.append("file", file);
 
@@ -224,7 +227,6 @@ export function AdmissionsPanel({
             const json = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(json?.error || "Delete failed");
 
-            // Simple reload approach
             toast.success("Admission deleted successfully");
             window.location.reload();
         } catch (e) {
@@ -234,86 +236,86 @@ export function AdmissionsPanel({
     }
 
     return (
-        <section className="mt-6">
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <section className="mt-8">
+            {/* Button removed - hoisted to parent page */}
+            <div className="mb-5 flex items-center justify-between">
                 <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-slate-900">Admissions</h2>
-                    <p className="text-xs text-slate-500">
-                        Reception / admission history (updates patient file automatically).
-                    </p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="h-6 w-1 rounded-full bg-emerald-500" />
+                        <h2 className="text-lg font-bold text-slate-900">Admissions</h2>
+                    </div>
                 </div>
-
-                <a
-                    href={`/dashboard/patients/${patientId}/admissions`}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-600 sm:w-auto"
-                >
-                    + New admission
-                </a>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {admissions.slice(0, 6).map((a) => (
                     <article
                         key={a.id}
-                        className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:shadow-md"
+                        className="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md hover:border-emerald-200/60"
                     >
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold text-slate-900">
-                                    {a.currentDiagnosis}
-                                </div>
-                                <div className="mt-1 text-xs text-slate-500">
-                                    Visit: {formatISODate(a.visitDate)}
-                                </div>
-                            </div>
-
-                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                            <span className="inline-flex items-center rounded-lg bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 border border-slate-100 group-hover:bg-white group-hover:border-emerald-100 group-hover:text-emerald-700 transition-colors">
+                                {formatISODate(a.visitDate)}
+                            </span>
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide
+                                ${a.status === 'HIGH' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                    a.status === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                        'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                                 {a.status}
                             </span>
                         </div>
 
-                        <div className="mt-3 text-xs text-slate-700 line-clamp-3">
-                            <span className="font-medium">Reason:</span> {a.reason}
+                        <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-sm font-bold text-slate-900 leading-tight">
+                                {a.currentDiagnosis}
+                            </h3>
+                            <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                {a.reason}
+                            </p>
                         </div>
 
                         {a.medicalHistory && (
-                            <div className="mt-2 text-xs text-slate-500 line-clamp-2">
-                                <span className="font-medium">History:</span> {a.medicalHistory}
+                            <div className="mt-3 rounded-lg bg-slate-50/50 p-2 text-[11px] text-slate-600">
+                                <span className="font-semibold text-slate-700">Hx:</span> {a.medicalHistory}
                             </div>
                         )}
 
-                        {a.createdByEmail && (
-                            <div className="mt-3 text-[11px] text-slate-400">
-                                By: {a.createdByEmail}
+                        <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-3">
+                            <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                                {a.createdByEmail}
+                            </span>
+
+                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <a
+                                    href={`/dashboard/patients/${patientId}/admissions/${a.id}/edit`}
+                                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                </a>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setDeleteId(a.id)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </button>
                             </div>
-                        )}
-
-                        {/* ACTION ROW */}
-                        <div className="mt-4 flex items-center justify-end gap-2">
-                            <a
-                                href={`/dashboard/patients/${patientId}/admissions/${a.id}/edit`}
-                                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium text-emerald-600 hover:bg-emerald-50"
-                            >
-                                <Pencil className="h-3 w-3" />
-                                Edit
-                            </a>
-
-                            <button
-                                type="button"
-                                onClick={() => setDeleteId(a.id)}
-                                className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-50"
-                            >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
-                            </button>
                         </div>
                     </article>
                 ))}
 
                 {admissions.length === 0 && (
-                    <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                        No admissions yet. Create one to record diagnosis/history and update
-                        the patient file immediately.
+                    <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-12 text-center text-sm text-slate-500">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-4 ring-slate-50">
+                            <FileText className="h-8 w-8 text-slate-300" />
+                        </div>
+                        <h3 className="text-base font-semibold text-slate-900">No admissions recorded</h3>
+                        <p className="mt-1 max-w-xs text-slate-500">
+                            Create a new admission to track diagnosis and medical history.
+                        </p>
                     </div>
                 )}
             </div>
@@ -342,10 +344,6 @@ export function DocumentsPanel({
     const [query, setQuery] = useState("");
     const [tab, setTab] = useState<"all" | "favorite" | "recent">("recent");
 
-    const [uploading, setUploading] = useState(false);
-    const [extracting, setExtracting] = useState(false);
-    const [uploadError, setUploadError] = useState<string | null>(null);
-
     const [semanticQ, setSemanticQ] = useState("");
     const [searching, setSearching] = useState(false);
     const [searchHits, setSearchHits] = useState<SearchHit[]>([]);
@@ -353,51 +351,6 @@ export function DocumentsPanel({
 
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const handleImportClick = () => fileInputRef.current?.click();
-
-    const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (
-        e
-    ) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setUploadError(null);
-        setUploading(true);
-        setExtracting(false);
-
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("title", file.name);
-
-            const res = await fetch(`/api/patients/${patientId}/documents`, {
-                method: "POST",
-                body: formData,
-            });
-
-            const saved = await res.json();
-            if (!res.ok) throw new Error(saved?.error || "Upload failed");
-
-            if (saved?.document) {
-                setDocs((prev) => [saved.document as PatientDoc, ...prev]);
-                toast.success("Document uploaded successfully");
-            }
-
-            setExtracting(true);
-            await callExtractFileAPI(file);
-            toast.success("Document indexed successfully");
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : "Upload/index failed";
-            setUploadError(msg);
-            toast.error(msg);
-        } finally {
-            setUploading(false);
-            setExtracting(false);
-            e.target.value = "";
-        }
-    };
 
     async function runSemanticSearch() {
         const q = semanticQ.trim();
@@ -411,9 +364,8 @@ export function DocumentsPanel({
             const hits = await callSemanticSearchAPI(q);
             setSearchHits(hits);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : "Search failed";
-            setSearchError(msg);
-            toast.error(msg);
+            handleClientError(err, "Semantic search failed", "The search service is currently unavailable.");
+            setSearchError("Unable to perform search."); // Keep local state simple
             setSearchHits([]);
         } finally {
             setSearching(false);
@@ -423,14 +375,12 @@ export function DocumentsPanel({
     async function handleConfirmDelete() {
         if (!deleteId) return;
         setIsDeleting(true);
-        setUploadError(null);
+
 
         try {
             const res = await fetch(
                 `/api/patients/${patientId}/documents/${deleteId}`,
-                {
-                    method: "DELETE",
-                }
+                { method: "DELETE" }
             );
 
             if (!res.ok) throw new Error(await res.text());
@@ -438,9 +388,7 @@ export function DocumentsPanel({
             setDeleteId(null);
             toast.success("Document deleted successfully");
         } catch (e) {
-            const msg = e instanceof Error ? e.message : "Delete failed";
-            setUploadError(msg);
-            toast.error(msg);
+            handleClientError(e, "Delete failed", "Could not delete the document.");
         } finally {
             setIsDeleting(false);
         }
@@ -457,179 +405,175 @@ export function DocumentsPanel({
         });
 
     return (
-        <section className="mt-8">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="mt-12">
+            <div className="mb-6 flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-slate-900">Documents</h2>
-                    <p className="text-xs text-slate-500">
-                        Upload and manage medical documents associated with this patient.
-                    </p>
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                    {(uploading || extracting) && (
-                        <span className="text-xs text-slate-500">
-                            {uploading ? "Uploading…" : "Indexing in Qdrant…"}
-                        </span>
-                    )}
-
-                    <button
-                        type="button"
-                        onClick={handleImportClick}
-                        disabled={uploading || extracting}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-emerald-600 disabled:opacity-60 sm:w-auto"
-                    >
-                        <UploadCloud className="h-4 w-4" />
-                        Import a doc
-                    </button>
-
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="application/pdf"
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
+                    <div className="flex items-center gap-2">
+                        <div className="h-6 w-1 rounded-full bg-indigo-500" />
+                        <h2 className="text-lg font-bold text-slate-900">Documents</h2>
+                    </div>
                 </div>
             </div>
 
-            {uploadError && (
-                <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    {uploadError}
+            {/* Semantic Search HERO */}
+            <div className="mb-8 rounded-3xl bg-gradient-to-b from-indigo-50/50 to-white/50 p-1 ring-1 ring-indigo-100 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                    <Search className="h-32 w-32 text-indigo-500 transform rotate-12" />
                 </div>
-            )}
 
-            {/* Semantic Search */}
-            <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-900">
-                            Semantic search
+                <div className="relative rounded-[20px] bg-white p-5 sm:p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                                    <Search className="h-3.5 w-3.5" />
+                                </span>
+                                Semantic Analysis
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Ask medical questions about the patient&apos;s history.
+                            </p>
                         </div>
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:w-[520px] sm:flex-row">
-                        <input
-                            className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            placeholder="Ask something… (e.g. hypertension, allergies, MRI)"
-                            value={semanticQ}
-                            onChange={(e) => setSemanticQ(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    runSemanticSearch();
-                                }
-                            }}
-                        />
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <div className="relative flex-1">
+                            <input
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 pl-11 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                                placeholder="e.g. 'Has the patient shown signs of hypertension recently?'"
+                                value={semanticQ}
+                                onChange={(e) => setSemanticQ(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        runSemanticSearch();
+                                    }
+                                }}
+                            />
+                            <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-400" />
+                        </div>
                         <button
                             type="button"
                             onClick={runSemanticSearch}
                             disabled={searching}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-60 sm:w-auto"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-emerald-700 hover:shadow-emerald-200/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
                         >
-                            <Search className="h-4 w-4" />
-                            {searching ? "Searching…" : "Search"}
+                            {searching ? (
+                                <>
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                                    Analyzing...
+                                </>
+                            ) : (
+                                <>
+                                    <Search className="h-4 w-4" />
+                                    Search
+                                </>
+                            )}
                         </button>
                     </div>
-                </div>
 
-                {searchError && (
-                    <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                        {searchError}
-                    </div>
-                )}
-
-                {searchHits.length > 0 && (
-                    <div className="mt-4 grid gap-3">
-                        {searchHits.slice(0, 10).map((h, idx) => (
-                            <ResultCard key={h.id} hit={h} isBest={idx === 0} />
-                        ))}
-                    </div>
-                )}
-
-                {searchHits.length === 0 &&
-                    semanticQ.trim() !== "" &&
-                    !searching &&
-                    !searchError && (
-                        <div className="mt-3 text-sm text-slate-500">
-                            No semantic results.
+                    {searchError && (
+                        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {searchError}
                         </div>
                     )}
+
+                    {searchHits.length > 0 && (
+                        <div className="mt-6 space-y-3">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                Analysis Findings ({searchHits.length})
+                            </div>
+                            <div className="grid gap-3">
+                                {searchHits.slice(0, 10).map((h, idx) => (
+                                    <ResultCard key={h.id} hit={h} isBest={idx === 0} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {searchHits.length === 0 &&
+                        semanticQ.trim() !== "" &&
+                        !searching &&
+                        !searchError && (
+                            <div className="mt-4 text-center text-sm text-slate-500 italic py-2">
+                                No relevant information found in documents.
+                            </div>
+                        )}
+                </div>
             </div>
 
-            {/* Tabs + local title search */}
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="w-full overflow-x-auto">
-                    <div className="inline-flex min-w-max rounded-full bg-slate-100 p-1 text-xs font-medium text-slate-500">
+            {/* Filter Bar */}
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+                <nav className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl">
+                    {(["recent", "favorite", "all"] as const).map((t) => (
                         <button
-                            type="button"
-                            onClick={() => setTab("favorite")}
-                            className={
-                                "rounded-full px-3 py-1 transition " +
-                                (tab === "favorite"
-                                    ? "bg-white text-emerald-600 shadow-sm"
-                                    : "hover:text-slate-700")
-                            }
+                            key={t}
+                            onClick={() => setTab(t)}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${tab === t
+                                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-900/5"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                }`}
                         >
-                            Favorite
+                            {t.charAt(0).toUpperCase() + t.slice(1)}
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setTab("recent")}
-                            className={
-                                "rounded-full px-3 py-1 transition " +
-                                (tab === "recent"
-                                    ? "bg-white text-emerald-600 shadow-sm"
-                                    : "hover:text-slate-700")
-                            }
-                        >
-                            Recently added
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTab("all")}
-                            className={
-                                "rounded-full px-3 py-1 transition " +
-                                (tab === "all"
-                                    ? "bg-white text-emerald-600 shadow-sm"
-                                    : "hover:text-slate-700")
-                            }
-                        >
-                            All docs
-                        </button>
-                    </div>
-                </div>
+                    ))}
+                </nav>
 
-                <div className="relative w-full sm:max-w-xs">
+                <div className="relative w-full sm:w-64">
                     <input
-                        className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        placeholder="Filter by title…"
+                        className="w-full rounded-xl border-none bg-slate-100/50 px-4 py-2 pl-9 text-xs font-medium text-slate-700 outline-none focus:bg-slate-100 focus:ring-0 placeholder:text-slate-400"
+                        placeholder="Filter by filename..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                     />
+                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
                 </div>
             </div>
 
-            {/* Document cards */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {/* Document Grid */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {filtered.map((doc) => (
                     <article
                         key={doc.id}
-                        className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm hover:shadow-md"
+                        className="group flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:shadow-md hover:border-indigo-100"
                     >
-                        <div className="flex items-start gap-2">
-                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
-                                <FileText className="h-4 w-4" />
-                            </span>
-                            <p className="text-xs leading-snug text-slate-700 line-clamp-4">
-                                {doc.title}
-                            </p>
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+                                <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                                <h4 className="text-sm font-semibold text-slate-900 leading-tight mb-1 line-clamp-2" title={doc.title}>
+                                    {doc.title}
+                                </h4>
+                                <p className="text-[10px] text-slate-400">
+                                    {formatDocDate(doc.date)}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="mt-3 flex flex-col gap-2 text-[11px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                            <span>{formatDocDate(doc.date)}</span>
+                        <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteId(doc.id)}
+                                disabled={isDeleting}
+                                className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                                title="Delete"
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </button>
 
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => alert("TODO: toggle favorite")}
+                                    className="p-1.5 rounded-lg text-slate-300 hover:text-amber-400 transition-colors"
+                                >
+                                    {doc.isFavorite ? (
+                                        <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                                    ) : (
+                                        <Star className="h-4 w-4" />
+                                    )}
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -638,33 +582,9 @@ export function DocumentsPanel({
                                             "_blank"
                                         )
                                     }
-                                    className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-100"
+                                    className="px-3 py-1.5 rounded-lg bg-slate-50 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
                                 >
-                                    View
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setDeleteId(doc.id)}
-                                    disabled={isDeleting}
-                                    className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-60"
-                                    title="Delete"
-                                >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    Delete
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => alert("TODO: toggle favorite")}
-                                    className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-100"
-                                    aria-label="Toggle favorite"
-                                >
-                                    {doc.isFavorite ? (
-                                        <Star className="h-3.5 w-3.5 text-amber-400" />
-                                    ) : (
-                                        <StarOff className="h-3.5 w-3.5 text-slate-300" />
-                                    )}
+                                    View PDF
                                 </button>
                             </div>
                         </div>
@@ -672,8 +592,11 @@ export function DocumentsPanel({
                 ))}
 
                 {filtered.length === 0 && (
-                    <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                        No documents found.
+                    <div className="col-span-full py-12 text-center">
+                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
+                            <Search className="h-6 w-6 text-slate-300" />
+                        </div>
+                        <p className="text-sm text-slate-500">No documents match your filter.</p>
                     </div>
                 )}
             </div>

@@ -1,4 +1,3 @@
-// middleware.ts  (or src/middleware.ts)
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
@@ -12,9 +11,15 @@ export async function middleware(req: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  // Protect everything under /dashboard
-  if (pathname.startsWith("/dashboard")) {
+  // Protect dashboard and API routes (except auth)
+  const isApiAuth = pathname.startsWith("/api/auth");
+  const isProtected = pathname.startsWith("/dashboard") || (pathname.startsWith("/api") && !isApiAuth);
+
+  if (isProtected) {
     if (!token) {
+      if (pathname.startsWith("/api")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       const url = new URL("/signin", origin);
       // preserve intended destination
       url.searchParams.set("callbackUrl", pathname + search);
@@ -33,6 +38,16 @@ export async function middleware(req: NextRequest) {
 
 // Only run on these routes
 export const config = {
-  matcher: ["/dashboard/:path*", "/signin"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/auth (NextAuth routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/dashboard/:path*",
+    "/signin",
+    "/api/:path*", // Secure all API routes
+  ],
 };
-

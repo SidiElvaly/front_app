@@ -3,6 +3,7 @@
 import React, { FormEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { handleClientError } from "@/lib/client-error";
 import Topbar from "@/components/Topbar";
 import InputField from "@/components/forms/InputField";
 import {
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 
-type Gender = "male" | "female" | "other" | "";
+type Gender = "male" | "female" | "";
 type Status = "LOW" | "MEDIUM" | "HIGH" | "";
 
 /* ---------------- Helpers ---------------- */
@@ -28,7 +29,7 @@ function todayISO() {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy} -${mm} -${dd} `;
+  return `${yyyy}-${mm}-${dd}`;
 }
 function isISODateString(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -105,7 +106,7 @@ const NewPatientSchema = z
         message: "Enroll number must be 3–30 chars (letters/numbers/_/-).",
       }),
 
-    gender: z.enum(["", "male", "female", "other"]),
+    gender: z.enum(["", "male", "female"]),
 
     dob: z
       .string()
@@ -264,8 +265,7 @@ export default function NewPatientPage() {
       toast.success("Patient created successfully!");
       router.push(`/dashboard/patients/${json.id}`);
     } catch (e) {
-      console.error(e);
-      toast.error("An unexpected error occurred.");
+      handleClientError(e, "Creation failed", "An unexpected error occurred.");
       setSaving(false);
     }
   };
@@ -430,7 +430,7 @@ export default function NewPatientPage() {
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                    <option value="other">Other</option>
+
                   </select>
                   <FieldHint>Optional. Select the patient&apos;s gender.</FieldHint>
                   <FieldError msg={errors.gender} />

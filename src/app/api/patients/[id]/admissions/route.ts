@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { decodeId } from "@/lib/obfuscation";
 
 /* ---------------- Helpers ---------------- */
 const emptyToUndefined = (v: unknown) => {
@@ -25,7 +26,9 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: patientId } = await params;
+  const { id: rawId } = await params;
+  const patientId = decodeId(rawId);
+  if (!patientId) return NextResponse.json({ error: "Invalid patient ID" }, { status: 400 });
 
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -58,7 +61,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: patientId } = await params;
+  const { id: rawId } = await params;
+  const patientId = decodeId(rawId);
+  if (!patientId) return NextResponse.json({ error: "Invalid patient ID" }, { status: 400 });
 
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

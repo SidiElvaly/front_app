@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import Topbar from "@/components/Topbar";
 import { Camera, LogOut, MapPin, Mail, Phone, ShieldCheck, User2, X } from "lucide-react";
 import { toast } from "sonner";
+import { handleClientError } from "@/lib/client-error";
 /* ---------- Skeleton ---------- */
 function ProfileSkeleton() {
   return (
@@ -171,7 +172,7 @@ export default function ProfilePage() {
       setConfirmPassword("");
     } else {
       const err = await res.json();
-      toast.error(err.error || "Failed to update password");
+      handleClientError(err, "Update failed", err.error || "Failed to update password");
     }
   };
 

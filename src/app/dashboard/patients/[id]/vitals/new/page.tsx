@@ -3,19 +3,20 @@
 import React, { useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Topbar from "@/components/Topbar";
-import { 
-  Activity, 
-  Thermometer, 
-  HeartPulse, 
-  Droplets, 
-  Bed, 
-  Save, 
-  X, 
-  Stethoscope, 
+import {
+  Activity,
+  Thermometer,
+  HeartPulse,
+  Droplets,
+  Bed,
+  Save,
+  X,
+  Stethoscope,
   Info,
   Clock
 } from "lucide-react";
 import { toast } from "sonner";
+import { decodeId } from "@/lib/obfuscation";
 
 /* ---------------- Helpers ---------------- */
 function FieldHint({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,8 @@ function FieldHint({ children }: { children: React.ReactNode }) {
 
 export default function NewVitals({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { id } = use(params);
+  const { id: rawId } = use(params);
+  const id = React.useMemo(() => decodeId(rawId) || "", [rawId]);
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -70,7 +72,7 @@ export default function NewVitals({ params }: { params: Promise<{ id: string }> 
 
       <section className="px-3 pb-10 pt-4 sm:px-4 lg:px-6">
         <div className="card overflow-hidden border border-slate-100 shadow-card bg-white rounded-2xl">
-          
+
           {/* Header - Gradient style matching Edit Patient */}
           <div className="flex flex-col gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-white px-4 py-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3 min-w-0">
@@ -114,7 +116,7 @@ export default function NewVitals({ params }: { params: Promise<{ id: string }> 
             {/* Left Column: Primary Vitals */}
             <div className="space-y-6">
               <div className="grid gap-5 sm:grid-cols-2">
-                
+
                 {/* Systolic BP */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-600">Systolic BP (mmHg)</label>
@@ -207,7 +209,7 @@ export default function NewVitals({ params }: { params: Promise<{ id: string }> 
                 <Info className="h-4 w-4 text-emerald-500" />
                 <p className="text-sm font-semibold">Recording Tips</p>
               </div>
-              
+
               <ul className="space-y-4">
                 <li className="flex gap-3">
                   <div className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
@@ -218,18 +220,18 @@ export default function NewVitals({ params }: { params: Promise<{ id: string }> 
                   <p className="text-xs text-slate-500 leading-relaxed">Check that the pulse oximeter is properly placed for accurate SpO₂.</p>
                 </li>
               </ul>
-                {/* Updated Timestamp Section */}
-                <div className="mt-auto pt-6">
+              {/* Updated Timestamp Section */}
+              <div className="mt-auto pt-6">
                 <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-100">
-                    <div className="flex items-center gap-2 text-slate-400 mb-1">
+                  <div className="flex items-center gap-2 text-slate-400 mb-1">
                     <Clock className="h-3 w-3" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Entry Time</span>
-                    </div>
-                    <p suppressHydrationWarning className="text-xs font-medium text-slate-700">
+                  </div>
+                  <p suppressHydrationWarning className="text-xs font-medium text-slate-700">
                     {new Date().toLocaleString()}
-                    </p>
+                  </p>
                 </div>
-                </div>
+              </div>
             </div>
           </form>
         </div>

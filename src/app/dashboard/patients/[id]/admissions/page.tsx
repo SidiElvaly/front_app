@@ -5,11 +5,13 @@ import { useEffect, useState, use as usePromise, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Topbar from "@/components/Topbar";
 import { CalendarDays, FileText, Stethoscope, ArrowLeft, Save } from "lucide-react";
+import { decodeId } from "@/lib/obfuscation";
 
 type PatientMini = { id: string; name: string };
 
 export default function AdmissionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: patientId } = usePromise(params);
+  const { id: rawId } = usePromise(params);
+  const patientId = decodeId(rawId) || "";
   const router = useRouter();
 
   const [patient, setPatient] = useState<PatientMini | null>(null);

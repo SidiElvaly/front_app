@@ -22,6 +22,7 @@ import type { ChangeEvent } from "react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import StatusPill from "@/components/StatusPill";
 import IconButton from "@/components/IconButton";
+import { encodeId } from "@/lib/obfuscation";
 
 import Skeleton from "@/components/Skeleton";
 
@@ -308,7 +309,7 @@ export default function PatientsPage() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <Link
-                        href={`/dashboard/patients/${p.id}`}
+                        href={`/dashboard/patients/${encodeId(p.id)}`}
                         className="flex items-center gap-3 min-w-0"
                       >
                         <Avatar name={p.name} />
@@ -327,13 +328,13 @@ export default function PatientsPage() {
                         </div>
                       </Link>
 
-                      <Link href={`/dashboard/patients/${p.id}`} className="mt-1">
+                      <Link href={`/dashboard/patients/${encodeId(p.id)}`} className="mt-1">
                         <ChevronRight className="h-4 w-4 text-slate-400" />
                       </Link>
                     </div>
 
                     <div className="mt-3 space-y-2 text-xs text-slate-600">
-                      <Link href={`/dashboard/patients/${p.id}`} className="block space-y-2">
+                      <Link href={`/dashboard/patients/${encodeId(p.id)}`} className="block space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Last visit</span>
                           <span className="font-medium text-slate-700">
@@ -364,7 +365,7 @@ export default function PatientsPage() {
                         <IconButton
                           title="Edit"
                           variant="primary"
-                          onClick={() => router.push(`/dashboard/patients/${p.id}/edit`)}
+                          onClick={() => router.push(`/dashboard/patients/${encodeId(p.id)}/edit`)}
                         >
                           <PencilLine className="h-3.5 w-3.5" />
                         </IconButton>
@@ -414,7 +415,7 @@ export default function PatientsPage() {
                           <Avatar name={p.name} />
                           <div>
                             <Link
-                              href={`/dashboard/patients/${p.id}`}
+                              href={`/dashboard/patients/${encodeId(p.id)}`}
                               className="text-sm font-medium text-slate-900 hover:underline"
                             >
                               {p.name}
@@ -451,7 +452,7 @@ export default function PatientsPage() {
 
                       <td className="px-3 py-3">
                         <div className="flex justify-center gap-2">
-                          <Link href={`/dashboard/patients/${p.id}/edit`} title="Edit">
+                          <Link href={`/dashboard/patients/${encodeId(p.id)}/edit`} title="Edit">
                             <IconButton title="Edit" variant="primary">
                               <PencilLine className="h-3.5 w-3.5" />
                             </IconButton>

@@ -1,23 +1,29 @@
 "use client";
 
-import React, { useEffect, useState, use as usePromise } from "react";
+import React, { useEffect, useState, useRef, use as usePromise } from "react";
 import Topbar from "@/components/Topbar";
 import StatusPill from "@/components/StatusPill";
 import { AdmissionsPanel, DocumentsPanel, type PatientDoc, type Admission } from "@/components/PatientPanels";
 import Link from "next/link";
-import { 
-  Activity, 
-  Pill, 
-  ClipboardCheck, 
-  History, 
-  PlusCircle, 
+import {
+  Activity,
+  Pill,
+  ClipboardCheck,
+  History,
+  PlusCircle,
   ChevronRight,
   Stethoscope,
   User,
   Calendar,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  UploadCloud,
+  Plus
 } from "lucide-react";
+import { toast } from "sonner";
+import { handleClientError } from "@/lib/client-error";
+import { callExtractFileAPI } from "@/components/PatientPanels";
+import { decodeId } from "@/lib/obfuscation";
 
 /* ----------------- Types ----------------- */
 type Patient = {
@@ -39,18 +45,18 @@ type Patient = {
 
 /* ----------------- Sub-Components ----------------- */
 
-function QuickActionCard({ 
-  title, 
-  subtitle, 
-  icon: Icon, 
-  href, 
-  variant = "blue" 
-}: { 
-  title: string; 
-  subtitle: string; 
-  icon: any; 
-  href: string; 
-  variant?: "blue" | "emerald" | "amber" 
+function QuickActionCard({
+  title,
+  subtitle,
+  icon: Icon,
+  href,
+  variant = "blue"
+}: {
+  title: string;
+  subtitle: string;
+  icon: any;
+  href: string;
+  variant?: "blue" | "emerald" | "amber"
 }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600 ring-blue-100",
@@ -100,7 +106,8 @@ export default function PatientProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = usePromise(params);
+  const { id: rawId } = usePromise(params);
+  const id = React.useMemo(() => decodeId(rawId) || "", [rawId]); // fallback to empty string if invalid
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +116,52 @@ export default function PatientProfilePage({
   const [patient, setPatient] = useState<Patient | null>(null);
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [docs, setDocs] = useState<PatientDoc[]>([]);
+
+  const [uploading, setUploading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !patient) return;
+
+    setUploadError(null);
+    setUploading(true);
+    setExtracting(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", file.name);
+
+      const res = await fetch(`/api/patients/${patient.id}/documents`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved?.error || "Upload failed");
+
+      if (saved?.document) {
+        setDocs((prev) => [saved.document as PatientDoc, ...prev]);
+        toast.success("Document uploaded successfully");
+      }
+
+      await callExtractFileAPI(file);
+      toast.success("Document indexed successfully");
+    } catch (err) {
+      handleClientError(err, "Upload failed", "Could not upload or index the document.");
+      setUploadError("Upload failed.");
+    } finally {
+      setUploading(false);
+      setExtracting(false);
+      e.target.value = "";
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -169,10 +222,54 @@ export default function PatientProfilePage({
       <Topbar title="Patient details" />
 
       <section className="px-3 pb-12 pt-4 sm:px-4 lg:px-6">
-        
+
+        {/* ACTIONS ROW */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          {(uploading || extracting) && (
+            <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full animate-pulse border border-emerald-100">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              {uploading ? "Uploading..." : "Indexing content..."}
+            </div>
+          )}
+
+          <Link
+            href={`/dashboard/patients/${patient.id}/admissions`}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50 hover:border-emerald-300 transition-all active:scale-[0.98]"
+          >
+            <Plus className="h-4 w-4" />
+            New Admission
+          </Link>
+
+          <button
+            type="button"
+            onClick={handleImportClick}
+            disabled={uploading || extracting}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800 hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-60"
+          >
+            <UploadCloud className="h-4 w-4" />
+            Import Document
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+
+        {uploadError && (
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-medium">
+            Error: {uploadError}
+          </div>
+        )}
+
         {/* 1. TOP CARDS GRID */}
         <div className="grid gap-4 lg:grid-cols-3">
-          
+
           {/* Avatar & Main Info */}
           <div className="card flex flex-col items-center px-5 py-6 text-center sm:px-6 sm:py-8">
             <div className="relative mb-4 h-24 w-24 sm:h-28 sm:w-28">
@@ -198,7 +295,7 @@ export default function PatientProfilePage({
           {/* Personal Details */}
           <div className="card flex flex-col justify-center px-5 py-6 sm:px-6 sm:py-8">
             <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400 flex items-center gap-2">
-               <User className="h-3 w-3" /> Personal Information
+              <User className="h-3 w-3" /> Personal Information
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-5 text-sm">
               <div>
@@ -221,7 +318,7 @@ export default function PatientProfilePage({
           {/* Medical Snapshot */}
           <div className="card flex flex-col justify-center px-5 py-6 sm:px-6 sm:py-8">
             <h3 className="mb-5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400 flex items-center gap-2">
-               <Activity className="h-3 w-3" /> Medical Snapshot
+              <Activity className="h-3 w-3" /> Medical Snapshot
             </h3>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between border-b border-slate-50 pb-2">
@@ -242,53 +339,53 @@ export default function PatientProfilePage({
 
         {/* 2. CLINICAL ACTIONS SECTION */}
         <div className="mt-10 mb-5 flex items-center gap-2">
-            <div className="h-1 w-8 rounded-full bg-emerald-500" />
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Stethoscope className="h-4 w-4 text-slate-400" />
-                Clinical Management
-            </h3>
+          <div className="h-1 w-8 rounded-full bg-emerald-500" />
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Stethoscope className="h-4 w-4 text-slate-400" />
+            Clinical Management
+          </h3>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <QuickActionCard 
-                title="Add Vitals" 
-                subtitle="Record BP, Temp, Heart Rate" 
-                icon={Activity} 
-                href={`/dashboard/patients/${id}/vitals/new`} 
-                variant="amber"
-            />
-            <QuickActionCard 
-                title="Vitals History" 
-                subtitle="Review past measurements" 
-                icon={History} 
-                href={`/dashboard/patients/${id}/vitals`} 
-            />
-            <QuickActionCard 
-                title="Nurse Checklist" 
-                subtitle="Today's pending doses" 
-                icon={ClipboardCheck} 
-                href={`/dashboard/patients/${id}/medication/checklist`} 
-                variant="emerald"
-            />
-          <QuickActionCard 
-            title="Medication Plans" 
-            subtitle="View active prescriptions" 
-            icon={Pill} 
-            href={`/dashboard/patients/${id}/medication`} 
+          <QuickActionCard
+            title="Add Vitals"
+            subtitle="Record BP, Temp, Heart Rate"
+            icon={Activity}
+            href={`/dashboard/patients/${id}/vitals/new`}
+            variant="amber"
+          />
+          <QuickActionCard
+            title="Vitals History"
+            subtitle="Review past measurements"
+            icon={History}
+            href={`/dashboard/patients/${id}/vitals`}
+          />
+          <QuickActionCard
+            title="Nurse Checklist"
+            subtitle="Today's pending doses"
+            icon={ClipboardCheck}
+            href={`/dashboard/patients/${id}/medication/checklist`}
+            variant="emerald"
+          />
+          <QuickActionCard
+            title="Medication Plans"
+            subtitle="View active prescriptions"
+            icon={Pill}
+            href={`/dashboard/patients/${id}/medication`}
           />
 
-          <QuickActionCard 
-            title="New Prescription" 
-            subtitle="Create a dosing schedule" 
-            icon={PlusCircle} 
-            href={`/dashboard/patients/${id}/medication/new`} 
+          <QuickActionCard
+            title="New Prescription"
+            subtitle="Create a dosing schedule"
+            icon={PlusCircle}
+            href={`/dashboard/patients/${id}/medication/new`}
           />
         </div>
 
         {/* 3. ADMISSIONS & DOCUMENTS */}
         <div className="mt-10 space-y-10">
-            <AdmissionsPanel admissions={admissions} patientId={patient.id} />
-            <DocumentsPanel docs={docs} setDocs={setDocs} patientId={patient.id} />
+          <AdmissionsPanel admissions={admissions} patientId={patient.id} />
+          <DocumentsPanel docs={docs} setDocs={setDocs} patientId={patient.id} />
         </div>
 
       </section>
@@ -308,21 +405,21 @@ function PatientProfileSkeleton() {
           <div className="mt-3 h-3 w-48 rounded bg-slate-100 animate-pulse" />
         </div>
         <div className="card px-5 py-5 sm:px-6 sm:py-6 space-y-4">
-            <div className="h-4 w-28 bg-slate-100 animate-pulse rounded" />
-            <div className="grid grid-cols-2 gap-4">
-                <div className="h-10 bg-slate-50 animate-pulse rounded-xl" />
-                <div className="h-10 bg-slate-50 animate-pulse rounded-xl" />
-            </div>
+          <div className="h-4 w-28 bg-slate-100 animate-pulse rounded" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-10 bg-slate-50 animate-pulse rounded-xl" />
+            <div className="h-10 bg-slate-50 animate-pulse rounded-xl" />
+          </div>
         </div>
         <div className="card px-5 py-5 sm:px-6 sm:py-6 space-y-4">
-            <div className="h-4 w-28 bg-slate-100 animate-pulse rounded" />
-            <div className="h-20 bg-slate-50 animate-pulse rounded-xl" />
+          <div className="h-4 w-28 bg-slate-100 animate-pulse rounded" />
+          <div className="h-20 bg-slate-50 animate-pulse rounded-xl" />
         </div>
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          {[1,2,3].map(i => (
-              <div key={i} className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
-          ))}
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
+        ))}
       </div>
     </section>
   );

@@ -2,15 +2,16 @@
 
 import React, { useEffect, useState, use } from "react";
 import Topbar from "@/components/Topbar";
-import { 
-  Pill, 
-  Check, 
-  X, 
-  Clock, 
-  AlertCircle, 
-  ClipboardCheck 
+import {
+  Pill,
+  Check,
+  X,
+  Clock,
+  AlertCircle,
+  ClipboardCheck
 } from "lucide-react";
 import { toast } from "sonner";
+import { decodeId } from "@/lib/obfuscation";
 
 type Dose = {
   id: string;
@@ -27,7 +28,8 @@ export default function NurseChecklist({
 }: {
   params: Promise<{ id: string }>; // This matches your folder name [id]
 }) {
-  const { id } = use(params);
+  const { id: rawId } = use(params);
+  const id = React.useMemo(() => decodeId(rawId) || "", [rawId]);
   const [doses, setDoses] = useState<Dose[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -65,13 +67,13 @@ export default function NurseChecklist({
       if (!res.ok) throw new Error();
 
       toast.success(`Dose marked as ${status.toLowerCase()}`, { id: loadingToast });
-      load(); 
+      load();
     } catch {
       toast.error("Failed to update dose status", { id: loadingToast });
     }
   }
 
-  if (!mounted) return null; 
+  if (!mounted) return null;
 
   return (
     <main className="w-full bg-slate-50/50 min-h-screen">
@@ -84,9 +86,9 @@ export default function NurseChecklist({
             <p className="text-sm text-slate-500">Today, {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</p>
           </div>
           <div className="hidden sm:block">
-             <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-               {doses.filter(d => d.status === 'PENDING').length} Pending Doses
-             </span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+              {doses.filter(d => d.status === 'PENDING').length} Pending Doses
+            </span>
           </div>
         </div>
 
@@ -99,18 +101,16 @@ export default function NurseChecklist({
             {doses.map((d) => (
               <div
                 key={d.id}
-                className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${
-                  d.status === "PENDING" ? "border-slate-100 shadow-sm" : "border-slate-50 opacity-75"
-                }`}
+                className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${d.status === "PENDING" ? "border-slate-100 shadow-sm" : "border-slate-50 opacity-75"
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                    d.status === "PENDING" ? "bg-amber-50 text-amber-600" : 
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${d.status === "PENDING" ? "bg-amber-50 text-amber-600" :
                     d.status === "GIVEN" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                  }`}>
+                    }`}>
                     <Pill className="h-6 w-6" />
                   </div>
-                  
+
                   <div>
                     <h3 className="font-bold text-slate-900">{d.medicationPlan.drugName}</h3>
                     <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
@@ -141,9 +141,8 @@ export default function NurseChecklist({
                       </button>
                     </>
                   ) : (
-                    <div className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest ${
-                      d.status === "GIVEN" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                    }`}>
+                    <div className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest ${d.status === "GIVEN" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                      }`}>
                       {d.status === "GIVEN" ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
                       {d.status}
                     </div>

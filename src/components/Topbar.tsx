@@ -2,13 +2,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, ChevronLeft } from "lucide-react";
 import { useSidebar } from "./DashboardClientLayout";
 
 export default function Topbar({ title }: { title: string }) {
   const { data: session } = useSession();
   const { toggle } = useSidebar();
+  const router = useRouter();
   const userName = session?.user?.name ?? "Guest";
 
   const initials =
@@ -39,6 +41,16 @@ export default function Topbar({ title }: { title: string }) {
             aria-label="Open menu"
           >
             <Menu size={22} />
+          </button>
+
+          {/* Back Button */}
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700 active:scale-95 transition-all"
+            title="Go Back"
+          >
+            <ChevronLeft size={20} />
           </button>
 
           {/* Brand badge hidden on mobile */}

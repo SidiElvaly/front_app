@@ -9,8 +9,10 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import FormSkeleton from "@/components/FormSkeleton";
 import { z } from "zod";
 import { toast } from "sonner";
+import { handleClientError } from "@/lib/client-error";
+import { decodeId } from "@/lib/obfuscation";
 
-type Gender = "male" | "female" | "other" | "";
+type Gender = "male" | "female" | "";
 type Status = "LOW" | "MEDIUM" | "HIGH" | "";
 
 /* ---------------- Helpers ---------------- */
@@ -108,7 +110,7 @@ const EditPatientSchema = z
         message: "Enroll number must be 3–30 chars (letters/numbers/_/-).",
       }),
 
-    gender: z.enum(["male", "female", "other", ""]).optional().default(""),
+    gender: z.enum(["male", "female", ""]).optional().default(""),
 
     dob: z
       .string()
@@ -150,7 +152,8 @@ function FieldError({ msg }: { msg?: string }) {
 /* ---------------- Page ---------------- */
 export default function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { id } = usePromise(params);
+  const { id: rawId } = usePromise(params);
+  const id = useMemo(() => decodeId(rawId) || "", [rawId]);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -332,8 +335,7 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
       toast.success("Patient updated successfully!");
       router.push(`/dashboard/patients/${id}`);
     } catch (e) {
-      console.error(e);
-      toast.error("An unexpected error occurred.");
+      handleClientError(e, "Update failed", "An unexpected error occurred.");
     } finally {
       setSaving(false);
     }
@@ -562,7 +564,7 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                    <option value="other">Other</option>
+
                   </select>
                   <FieldHint>Optional. Select gender.</FieldHint>
                   <FieldError msg={errors.gender} />
