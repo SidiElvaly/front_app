@@ -137,6 +137,13 @@ export async function POST(
       },
     });
 
+    await db.notification.create({
+      data: {
+        type: "INFO",
+        message: `Admission recorded for: ${patient.name}`,
+      },
+    });
+
     return NextResponse.json({ admission: created }, { status: 201 });
   } catch (e) {
     console.error(e);

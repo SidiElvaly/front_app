@@ -175,6 +175,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create Notification
+    await db.notification.create({
+      data: {
+        type: "SUCCESS",
+        message: `New patient created: ${created.name}`,
+      },
+    });
+
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     console.error("Error creating patient:", error);

@@ -170,6 +170,13 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
       },
     });
 
+    await db.notification.create({
+      data: {
+        type: "INFO",
+        message: `Patient updated: ${updated.name}`,
+      },
+    });
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating patient:", error);
@@ -188,6 +195,14 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
     if (!exists) return NextResponse.json({ error: "Patient not found" }, { status: 404 });
 
     await db.patient.delete({ where: { id } });
+
+    await db.notification.create({
+      data: {
+        type: "WARNING",
+        message: "Patient record deleted",
+      },
+    });
+
     return NextResponse.json({ ok: true, message: "Patient deleted" });
   } catch (error) {
     console.error("Error deleting patient:", error);

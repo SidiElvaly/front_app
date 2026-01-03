@@ -4,14 +4,82 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Menu, ChevronLeft } from "lucide-react";
+import { Bell, Menu, ChevronLeft, X, Check } from "lucide-react";
 import { useSidebar } from "./DashboardClientLayout";
+import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
+import { handleClientError } from "@/lib/client-error";
+
+type Notification = {
+  id: string;
+  type: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+};
 
 export default function Topbar({ title }: { title: string }) {
   const { data: session } = useSession();
   const { toggle } = useSidebar();
   const router = useRouter();
   const userName = session?.user?.name ?? "Guest";
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.notifications?.filter((n: Notification) => !n.isRead).length || 0);
+      }
+    } catch (e) {
+      console.error("Failed to load notifications");
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+
+    // Poll every 30s
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifs(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const markAllRead = async () => {
+    try {
+      await fetch("/api/notifications", {
+        method: "POST",
+        body: JSON.stringify({ action: "markAsRead" }),
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (e) {
+      console.error("Failed to mark read");
+    }
+  };
+
+  const toggleNotifs = () => {
+    if (!showNotifs && unreadCount > 0) {
+      markAllRead();
+    }
+    setShowNotifs(!showNotifs);
+  }
 
   const initials =
     userName
@@ -73,16 +141,65 @@ export default function Topbar({ title }: { title: string }) {
         {/* RIGHT */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Notifications */}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
-          >
-            <Bell size={16} />
-            <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-500 px-[5px] text-[10px] font-semibold text-white">
-              3
-            </span>
-          </button>
+          {/* Notifications */}
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              aria-label="Notifications"
+              onClick={toggleNotifs}
+              className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white shadow-sm transition-all
+                ${showNotifs ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}
+              `}
+            >
+              <Bell size={16} />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-[5px] text-[10px] font-semibold text-white ring-2 ring-white">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown */}
+            {showNotifs && (
+              <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-slate-100 bg-white shadow-xl ring-1 ring-slate-900/5 z-50 overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-50 px-4 py-3 bg-slate-50/50">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Notifications</h3>
+                  <button onClick={markAllRead} className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700">
+                    Mark all read
+                  </button>
+                </div>
+
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <Bell className="h-8 w-8 text-slate-200 mb-2" />
+                      <p className="text-sm text-slate-500">No notifications yet</p>
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-slate-50">
+                      {notifications.map((n) => (
+                        <li key={n.id} className={`p-4 transition-colors ${!n.isRead ? 'bg-emerald-50/30' : 'hover:bg-slate-50'}`}>
+                          <div className="flex gap-3">
+                            <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full 
+                              ${n.type === 'SUCCESS' ? 'bg-emerald-500' :
+                                n.type === 'WARNING' ? 'bg-amber-500' :
+                                  n.type === 'ERROR' ? 'bg-rose-500' : 'bg-indigo-500'}`}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-slate-900 leading-snug">{n.message}</p>
+                              <p className="mt-1 text-[10px] text-slate-400">
+                                {new Date(n.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* User */}
           <Link
