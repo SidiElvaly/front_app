@@ -11,6 +11,7 @@ export async function POST(req: Request) {
   }
 
   const { query } = (await req.json()) as { query?: string };
+
   if (!query?.trim()) return NextResponse.json({ results: [] });
 
   const url = new URL("/search", base);

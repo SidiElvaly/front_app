@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, use as usePromise } from "react";
 import Topbar from "@/components/Topbar";
 import StatusPill from "@/components/StatusPill";
-import { AdmissionsPanel, DocumentsPanel, type PatientDoc, type Admission } from "@/components/PatientPanels";
+import { AdmissionsPanel, type Admission } from "@/components/PatientPanels";
 import Link from "next/link";
 import {
   Activity,
@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { handleClientError } from "@/lib/client-error";
-import { callExtractFileAPI } from "@/components/PatientPanels";
 import { decodeId } from "@/lib/obfuscation";
 
 /* ----------------- Types ----------------- */
@@ -65,17 +64,17 @@ function QuickActionCard({
   };
 
   return (
-    <Link href={href} className="group flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-slate-200 hover:shadow-md active:scale-[0.98]">
-      <div className="flex items-center gap-4">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ring-1 ${colors[variant]}`}>
-          <Icon className="h-6 w-6" />
+    <Link href={href} className="group flex flex-col sm:flex-row items-center justify-center sm:justify-between rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm transition-all hover:border-slate-200 hover:shadow-md active:scale-[0.98] text-center sm:text-left gap-3 sm:gap-4 h-full">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+        <div className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl ring-1 ${colors[variant]}`}>
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-slate-900">{title}</h4>
-          <p className="text-xs text-slate-500">{subtitle}</p>
+          <h4 className="text-sm font-bold text-slate-900 leading-tight">{title}</h4>
+          <p className="hidden sm:block text-xs text-slate-500 mt-0.5">{subtitle}</p>
         </div>
       </div>
-      <ChevronRight className="h-5 w-5 text-slate-300 transition-transform group-hover:translate-x-1" />
+      <ChevronRight className="hidden sm:block h-5 w-5 text-slate-300 transition-transform group-hover:translate-x-1" />
     </Link>
   );
 }
@@ -115,53 +114,7 @@ export default function PatientProfilePage({
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [admissions, setAdmissions] = useState<Admission[]>([]);
-  const [docs, setDocs] = useState<PatientDoc[]>([]);
-
-  const [uploading, setUploading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleImportClick = () => fileInputRef.current?.click();
-
-  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !patient) return;
-
-    setUploadError(null);
-    setUploading(true);
-    setExtracting(false);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("title", file.name);
-
-      const res = await fetch(`/api/patients/${patient.id}/documents`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const saved = await res.json();
-      if (!res.ok) throw new Error(saved?.error || "Upload failed");
-
-      if (saved?.document) {
-        setDocs((prev) => [saved.document as PatientDoc, ...prev]);
-        toast.success("Document uploaded successfully");
-      }
-
-      await callExtractFileAPI(file);
-      toast.success("Document indexed successfully");
-    } catch (err) {
-      handleClientError(err, "Upload failed", "Could not upload or index the document.");
-      setUploadError("Upload failed.");
-    } finally {
-      setUploading(false);
-      setExtracting(false);
-      e.target.value = "";
-    }
-  };
+  /* Documents - moved to subpage */
 
   useEffect(() => {
     setMounted(true);
@@ -181,7 +134,7 @@ export default function PatientProfilePage({
 
         setPatient(pData.patient);
         setAdmissions(aData.admissions);
-        setDocs(pData.documents || []);
+        // docs moved to subpage
       } catch (e) {
         setError("Failed to load patient data.");
       } finally {
@@ -225,16 +178,6 @@ export default function PatientProfilePage({
 
         {/* ACTIONS ROW */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          {(uploading || extracting) && (
-            <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full animate-pulse border border-emerald-100">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              {uploading ? "Uploading..." : "Indexing content..."}
-            </div>
-          )}
-
           <Link
             href={`/dashboard/patients/${patient.id}/admissions`}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50 hover:border-emerald-300 transition-all active:scale-[0.98]"
@@ -242,30 +185,7 @@ export default function PatientProfilePage({
             <Plus className="h-4 w-4" />
             New Admission
           </Link>
-
-          <button
-            type="button"
-            onClick={handleImportClick}
-            disabled={uploading || extracting}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800 hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-60"
-          >
-            <UploadCloud className="h-4 w-4" />
-            Import Document
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleFileChange}
-          />
         </div>
-
-        {uploadError && (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-medium">
-            Error: {uploadError}
-          </div>
-        )}
 
         {/* 1. TOP CARDS GRID */}
         <div className="grid gap-4 lg:grid-cols-3">
@@ -346,7 +266,7 @@ export default function PatientProfilePage({
           </h3>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           <QuickActionCard
             title="Add Vitals"
             subtitle="Record BP, Temp, Heart Rate"
@@ -380,12 +300,18 @@ export default function PatientProfilePage({
             icon={PlusCircle}
             href={`/dashboard/patients/${id}/medication/new`}
           />
+          <QuickActionCard
+            title="Documents & Search"
+            subtitle="View files and semantic search"
+            icon={UploadCloud}
+            href={`/dashboard/patients/${id}/documents`}
+            variant="blue"
+          />
         </div>
 
         {/* 3. ADMISSIONS & DOCUMENTS */}
         <div className="mt-10 space-y-10">
           <AdmissionsPanel admissions={admissions} patientId={patient.id} />
-          <DocumentsPanel docs={docs} setDocs={setDocs} patientId={patient.id} />
         </div>
 
       </section>

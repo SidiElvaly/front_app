@@ -79,9 +79,10 @@ function extractMetaFromText(text: string) {
 }
 
 /* ----------------- Proxy APIs ----------------- */
-export async function callExtractFileAPI(file: File) {
+export async function callExtractFileAPI(file: File, patientId: string) {
     const fd = new FormData();
     fd.append("file", file);
+    fd.append("patientId", patientId);
 
     const res = await fetch("/api/extract-file", {
         method: "POST",
@@ -93,11 +94,11 @@ export async function callExtractFileAPI(file: File) {
     return res.json();
 }
 
-async function callSemanticSearchAPI(query: string): Promise<SearchHit[]> {
+async function callSemanticSearchAPI(query: string, patientId: string): Promise<SearchHit[]> {
     const res = await fetch("/api/semantic-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, patientId }),
         cache: "no-store",
     });
 
@@ -308,14 +309,11 @@ export function AdmissionsPanel({
                 ))}
 
                 {admissions.length === 0 && (
-                    <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-12 text-center text-sm text-slate-500">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-4 ring-slate-50">
-                            <FileText className="h-8 w-8 text-slate-300" />
+                    <div className="col-span-full flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-4 py-8 text-center text-sm text-slate-500">
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-4 ring-slate-50">
+                            <FileText className="h-6 w-6 text-slate-300" />
                         </div>
-                        <h3 className="text-base font-semibold text-slate-900">No admissions recorded</h3>
-                        <p className="mt-1 max-w-xs text-slate-500">
-                            Create a new admission to track diagnosis and medical history.
-                        </p>
+                        <p className="text-slate-500 font-medium">No admissions recorded</p>
                     </div>
                 )}
             </div>
@@ -361,7 +359,7 @@ export function DocumentsPanel({
         setSearchError(null);
         setSearching(true);
         try {
-            const hits = await callSemanticSearchAPI(q);
+            const hits = await callSemanticSearchAPI(q, patientId);
             setSearchHits(hits);
         } catch (err) {
             handleClientError(err, "Semantic search failed", "The search service is currently unavailable.");
@@ -430,9 +428,6 @@ export function DocumentsPanel({
                                 </span>
                                 Semantic Analysis
                             </h3>
-                            <p className="text-xs text-slate-500 mt-1">
-                                Ask medical questions about the patient&apos;s history.
-                            </p>
                         </div>
                     </div>
 
@@ -440,7 +435,7 @@ export function DocumentsPanel({
                         <div className="relative flex-1">
                             <input
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 pl-11 text-sm text-slate-900 shadow-sm outline-none placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                                placeholder="e.g. 'Has the patient shown signs of hypertension recently?'"
+                                placeholder="Search documents..."
                                 value={semanticQ}
                                 onChange={(e) => setSemanticQ(e.target.value)}
                                 onKeyDown={(e) => {
@@ -596,7 +591,7 @@ export function DocumentsPanel({
                         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
                             <Search className="h-6 w-6 text-slate-300" />
                         </div>
-                        <p className="text-sm text-slate-500">No documents match your filter.</p>
+                        <p className="text-sm text-slate-500">No documents found.</p>
                     </div>
                 )}
             </div>
