@@ -301,7 +301,7 @@ export default function PatientsPage() {
 
             {/* ✅ Mobile cards */}
             <div className="md:hidden px-3 py-3">
-              <div className="grid gap-3">
+              <div className="grid gap-2">
                 {filtered.map((p) => (
                   <div
                     key={p.id}
@@ -317,13 +317,13 @@ export default function PatientsPage() {
                           <div className="truncate text-sm font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors">
                             {p.name}
                           </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <StatusPill value={p.status || "LOW"} />
-                            {p.idnum && (
-                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-600">
-                                ID: {p.idnum}
-                              </span>
-                            )}
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide
+                                ${p.status === 'HIGH' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                                p.status === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                  'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                              {p.status || "LOW"}
+                            </span>
                           </div>
                         </div>
                       </Link>
@@ -333,8 +333,8 @@ export default function PatientsPage() {
                       </Link>
                     </div>
 
-                    <div className="mt-3 space-y-2 text-xs text-slate-600">
-                      <Link href={`/dashboard/patients/${encodeId(p.id)}`} className="block space-y-2">
+                    <div className="mt-2 space-y-1.5 text-xs text-slate-600">
+                      <Link href={`/dashboard/patients/${encodeId(p.id)}`} className="block space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Last visit</span>
                           <span className="font-medium text-slate-700">
@@ -361,7 +361,7 @@ export default function PatientsPage() {
                       </Link>
 
                       {/* Mobile actions */}
-                      <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-50 mt-1">
+                      <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-50 mt-2">
                         <IconButton
                           title="Edit"
                           variant="primary"
