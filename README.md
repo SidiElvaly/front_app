@@ -76,10 +76,22 @@ Visit [http://localhost:3000](http://localhost:3000) to access the dashboard.
 
 ```bash
 src/
-├── app/                 # Next.js App Router pages and layouts
+├── app/
 │   ├── api/             # Backend API routes
-│   └── dashboard/       # Main application views
+│   │   ├── auth/        # Authentication handlers (NextAuth)
+│   │   ├── patients/    # Patient management endpoints
+│   │   ├── profile/     # User profile endpoints
+│   │   └── ...
+│   ├── dashboard/       # Main application views
+│   │   ├── patients/    # Patient list and details
+│   │   ├── billing/     # Billing and invoices
+│   │   ├── profile/     # User profile settings
+│   │   └── rtl/         # RTL dashboard view
+│   ├── signin/          # Authentication page
+│   └── layout.tsx       # Root layout
 ├── components/          # Reusable UI components
 ├── lib/                 # Utilities, database clients, and helpers
-└── prisma/              # Database schema and seed scripts
+└── styles/              # Global styles (Tailwind imports)
+prisma/
+└── schema.prisma        # Database schema
 ```
