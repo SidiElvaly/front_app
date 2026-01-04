@@ -10,11 +10,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const formData = await req.formData();
+    const incomingFormData = await req.formData();
+    const file = incomingFormData.get("file");
+    const patientId = incomingFormData.get("patientId");
+
+    // Explicitly construct the upstream payload to ensure clarity for the extraction model service
+    const upstreamFormData = new FormData();
+    if (file) upstreamFormData.append("file", file);
+    if (patientId) upstreamFormData.append("patientId", patientId);
 
     const upstream = await fetch(`${base}/extract-file`, {
       method: "POST",
-      body: formData,
+      body: upstreamFormData,
       cache: "no-store",
     });
 
