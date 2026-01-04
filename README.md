@@ -93,5 +93,5 @@ src/
 ├── lib/                 # Utilities, database clients, and helpers
 └── styles/              # Global styles (Tailwind imports)
 prisma/
-└── schema.prisma        # Database schema
+└── schema.prisma       
 ```
