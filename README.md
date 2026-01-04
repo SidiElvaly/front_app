@@ -1,208 +1,85 @@
-# 🏥 SanaMed Clinic Dashboard
+# SanaMed Clinical Dashboard
 
-A modern clinic management dashboard built with:
+**SanaMed** is a comprehensive patient management system designed for modern healthcare facilities. It streamlines clinical workflows by integrating real-time patient tracking, medical record management, and intelligent document processing into a unified, secure interface.
 
-✅ **Next.js App Router**  
-✅ **MongoDB (Prisma + MongoDB adapter)**  
-✅ **NextAuth Authentication**  
-✅ **Real-time Patient, Billing & Appointment Data**  
-✅ **Profile Management & Password Change**  
-✅ **RTL Arabic Dashboard Support**  
-✅ **Seeder Script for Demo Data**
+## 🚀 Key Features
 
----
+### Clinical Management
+-   **Patient Profiles**: Centralized hub for demographics, contact info, and medical history.
+-   **Admissions & Vitals**: Track patient visits, diagnoses, and vital signs trends over time.
+-   **Medication Plans**: Manage active prescriptions and dosage schedules.
+-   **Risk Assessment**: Automated risk stratification (Low/Medium/High) based on patient data.
 
-## 📦 Features
+### Document Intelligence
+-   **Smart Storage**: Securely upload and organize medical reports (PDF/Images).
+-   **Semantic Search**: Query patient documents using natural language to find specific medical history (e.g., "History of hypertension").
+-   **Automated Extraction**: Extract key metadata from uploaded files automatically.
 
-### ✅ Core Modules
-- Patient Management
-- Patient Risk Levels (LOW / MEDIUM / HIGH)
-- Appointment Tracking
-- Billing & Invoice System
-- Document Storage
-- Dashboard Analytics
-- RTL Arabic Dashboard
+### Administration
+-   **Dashboard Analytics**: High-level overview of clinic performance and patient statistics.
+-   **Billing & Invoicing**: Integrated billing system for generating and tracking invoices.
+-   **Multi-Language Support**: Full RTL support for Arabic interfaces.
+-   **Security**: Role-based access control and secure authentication via NextAuth.
 
-### ✅ User Features
-- Login / Logout (NextAuth)
-- Profile Editing
-- Avatar Upload
-- Change Password
+## 🛠️ Technology Stack
 
-### ✅ Developer Features
-- MongoDB Integration
-- Prisma ORM
-- API Routes
-- Seed Data Script
-- Modular & Clean File Structure
+-   **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+-   **Language**: TypeScript
+-   **Styling**: Tailwind CSS
+-   **Database**: MongoDB (via Prisma ORM)
+-   **Authentication**: NextAuth.js
+-   **AI/ML**: Custom semantic search and extraction endpoints.
 
----
+## ⚙️ Getting Started
 
-## ✅ 3️⃣ Install Dependencies
+### Prerequisites
+-   Node.js 18+
+-   MongoDB instance (Local or Atlas)
 
-```bash
-npm install
-```
+### Installation
 
-or
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/SidiElvaly/front_app.git
+    cd front_app
+    ```
 
-```bash
-yarn install
-```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
----
+3.  **Configure Environment:**
+    Create a `.env` file in the root directory:
+    ```env
+    DATABASE_URL="mongodb://localhost:27017/sanamed"
+    NEXTAUTH_SECRET="your-secure-secret-key"
+    NEXTAUTH_URL="http://localhost:3000"
+    ```
 
-## ✅ 4️⃣ Environment Variables
+4.  **Setup Database:**
+    Generate the Prisma client and seed the database with demo data:
+    ```bash
+    npx prisma generate
+    npm run seed
+    ```
 
-Create a file:
+### Running the Application
 
-```
-.env
-```
-
-Paste:
-
-```
-DATABASE_URL="YOUR_MONGODB_CONNECTION_STRING"
-NEXTAUTH_SECRET="YOUR_RANDOM_SECRET"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-### 🔹 MongoDB Example
-```
-DATABASE_URL="mongodb://127.0.0.1:27017/sanamed?replicaSet=rs0"
-
-```
-
----
-
-## ✅ 5️⃣ Prisma Setup
-
-### Generate Prisma Client
-
-```bash
-npx prisma generate
-```
-
-
----
-
-## ✅ 6️⃣ Seed Demo Data
-
-This inserts demo users, patients, documents & invoices.
-
-```bash
-
-npm run seed
-```
-
-✅ After running, your dashboard will show real data.
-
----
-
-## ✅ 7️⃣ Run the App
-
+Start the development server:
 ```bash
 npm run dev
 ```
+Visit [http://localhost:3000](http://localhost:3000) to access the dashboard.
 
-Go to:
+## 📂 Project Structure
 
-👉 http://localhost:3000
-
----
-
-
-
-## ✅ 9️⃣ File Structure
-
-```
+```bash
 src/
- ├─ app/
- │   ├─ dashboard/
- │   │   ├─ page.tsx
- │   │   ├─ billing/
- │   │   ├─ rtl/
- │   │   └─ profile/
- │   ├─ api/
- │   │   ├─ dashboard/
- │   │   ├─ invoices/
- │   │   ├─ profile/
- │   │   └─ auth/
- │   └─ signin/
- ├─ lib/
- │   ├─ db.ts
- │   ├─ auth.ts
- │   └─ utils.ts
- ├─ components/
- └─ prisma/
-     └─ schema.prisma
+├── app/                 # Next.js App Router pages and layouts
+│   ├── api/             # Backend API routes
+│   └── dashboard/       # Main application views
+├── components/          # Reusable UI components
+├── lib/                 # Utilities, database clients, and helpers
+└── prisma/              # Database schema and seed scripts
 ```
-
----
-
-## ✅ 10️⃣ API Endpoints
-
-### Dashboard
-```
-GET /api/dashboard
-```
-
-### Patients
-```
-GET /api/patients
-POST /api/patients
-```
-
-### Invoices
-```
-GET /api/invoices
-```
-
-### Profile
-```
-GET /api/profile
-PUT /api/profile
-```
-
-### Auth
-```
-/api/auth/[...nextauth]
-```
-
----
-
-## ✅ 11️⃣ Deployment Notes
-
-Just make sure:
-
-✅ `DATABASE_URL` is set  
-✅ Prisma is built (`npx prisma generate`)  
-
----
-
-## ✅ 12️⃣ Troubleshooting
-
-### ❌ Prisma "client not found"
-```bash
-npx prisma generate
-```
-
-### ❌ MongoDB connection error
-Check `DATABASE_URL` in `.env`
-
-### ❌ Empty dashboard data
-Run:
-```bash
-node prisma/seed.js
-```
-
-
-## ✅ Done ✅
-
-Your project is now:
-
-✅ Installable  
-✅ Documented  
-✅ Ready for other developers  
-✅ Production-friendly
