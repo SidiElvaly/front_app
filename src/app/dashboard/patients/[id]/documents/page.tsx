@@ -50,43 +50,52 @@ export default function PatientDocumentsPage({
     const handleImportClick = () => fileInputRef.current?.click();
 
     const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file || !patient) return;
+        const files = e.target.files;
+        if (!files || files.length === 0 || !patient) return;
 
         setUploadError(null);
         setUploading(true);
         setExtracting(false);
 
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("title", file.name);
+        // Process files sequentially to avoid overwhelming the server or UI state
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            try {
+                // 1. Upload
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("title", file.name);
 
-            const res = await fetch(`/api/patients/${patient.id}/documents`, {
-                method: "POST",
-                body: formData,
-            });
+                const res = await fetch(`/api/patients/${patient.id}/documents`, {
+                    method: "POST",
+                    body: formData,
+                });
 
-            const saved = await res.json();
-            if (!res.ok) throw new Error(saved?.error || "Upload failed");
+                const saved = await res.json();
+                if (!res.ok) throw new Error(saved?.error || `Upload failed for ${file.name}`);
 
-            if (saved?.document) {
-                setDocs((prev) => [saved.document as PatientDoc, ...prev]);
-                toast.success("Document uploaded successfully");
+                if (saved?.document) {
+                    setDocs((prev) => [saved.document as PatientDoc, ...prev]);
+                    toast.success(`Uploaded: ${file.name}`);
+                }
+
+                // 2. Extract (Optimistic: don't block next upload on extraction, but maybe do?)
+                // To keep it simple and reliable, we'll wait for extraction start, or trigger it async
+                // Here we perform it sequentially to ensure `patientId` correlation is kept simple
+                setExtracting(true);
+                await callExtractFileAPI(file, patient.id);
+                toast.success(`Indexed: ${file.name}`);
+
+            } catch (err) {
+                console.error(err);
+                handleClientError(err, "Upload failed", `Could not upload ${file.name}`);
+                // Continue to next file even if one fails
             }
-
-            setUploading(false);
-            setExtracting(true);
-            await callExtractFileAPI(file, patient.id);
-            toast.success("Document indexed successfully");
-        } catch (err) {
-            handleClientError(err, "Upload failed", "Could not upload or index the document.");
-            setUploadError("Upload failed.");
-        } finally {
-            setUploading(false);
-            setExtracting(false);
-            e.target.value = "";
         }
+
+        setUploading(false);
+        setExtracting(false);
+        e.target.value = "";
     };
 
     useEffect(() => {
@@ -177,6 +186,7 @@ export default function PatientDocumentsPage({
                             ref={fileInputRef}
                             type="file"
                             accept="application/pdf"
+                            multiple
                             className="hidden"
                             onChange={handleFileChange}
                         />
