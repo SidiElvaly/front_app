@@ -221,8 +221,8 @@ export default function Topbar({ title }: { title: string }) {
                           title = "Error";
                         } else if (n.type === "WARNING") {
                           icon = <AlertCircle size={16} />;
-                          colorClass = "bg-amber-50 text-amber-600";
-                          title = "Warning";
+                          colorClass = "bg-rose-50 text-rose-600";
+                          title = "Delete";
                         }
 
                         return (
