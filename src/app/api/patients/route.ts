@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
     // Create Notification
     await db.notification.create({
       data: {
-        type: "SUCCESS",
+        type: "CREATE",
         message: `New patient created: ${created.name}`,
       },
     });

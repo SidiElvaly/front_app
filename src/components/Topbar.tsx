@@ -195,25 +195,35 @@ export default function Topbar({ title }: { title: string }) {
                       {notifications.map((n) => {
                         let icon = <Info size={16} />;
                         let colorClass = "bg-blue-50 text-blue-600";
-                        let title = "Update";
+                        // Default title
+                        let title = "Notification";
 
-                        if (n.type === "SUCCESS") {
+                        if (n.type === "CREATE") {
                           icon = <CheckCircle size={16} />;
                           colorClass = "bg-emerald-50 text-emerald-600";
-                          title = "Successful";
-                        } else if (n.type === "ERROR") {
-                          icon = <AlertCircle size={16} />;
-                          colorClass = "bg-rose-50 text-rose-600";
-                          title = "Error";
+                          title = "Create";
+                        } else if (n.type === "UPDATE") {
+                          icon = <Info size={16} />;
+                          colorClass = "bg-blue-50 text-blue-600";
+                          title = "Update";
                         } else if (n.type === "DELETE") {
                           icon = <AlertCircle size={16} />;
                           colorClass = "bg-rose-50 text-rose-600";
                           title = "Delete";
+                        } else if (n.type === "SUCCESS") {
+                          // Fallback for other success messages
+                          icon = <CheckCircle size={16} />;
+                          colorClass = "bg-emerald-50 text-emerald-600";
+                          title = "Success";
+                        } else if (n.type === "ERROR") {
+                          icon = <AlertCircle size={16} />;
+                          colorClass = "bg-rose-50 text-rose-600";
+                          title = "Error";
+                        } else if (n.type === "WARNING") {
+                          icon = <AlertCircle size={16} />;
+                          colorClass = "bg-amber-50 text-amber-600";
+                          title = "Warning";
                         }
-
-                        // Heuristic: If message contains "delete", maybe treat as Error style if user desired, 
-                        // but usually delete success is success. 
-                        // The user said "notification icon for delete update and create to be like this".
 
                         return (
                           <li key={n.id} className={`p-4 transition-colors border-b border-slate-50 last:border-0 ${!n.isRead ? 'bg-slate-50/50' : 'hover:bg-slate-50'}`}>

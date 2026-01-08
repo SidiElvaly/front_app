@@ -172,7 +172,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
 
     await db.notification.create({
       data: {
-        type: "INFO",
+        type: "UPDATE",
         message: `Patient updated: ${updated.name}`,
       },
     });
@@ -198,7 +198,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
 
     await db.notification.create({
       data: {
-        type: "WARNING",
+        type: "DELETE",
         message: "Patient record deleted",
       },
     });
