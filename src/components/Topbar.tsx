@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Menu, ChevronLeft, X, Check } from "lucide-react";
+import { Bell, Menu, ChevronLeft, X, Check, Info, CheckCircle, AlertCircle } from "lucide-react";
 import { useSidebar } from "./DashboardClientLayout";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
@@ -20,6 +20,21 @@ type Notification = {
 
 export default function Topbar({ title }: { title: string }) {
   const { data: session } = useSession();
+
+  function timeAgo(dateStr: string) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    const diffHours = Math.round(diffMins / 60);
+    const diffDays = Math.round(diffHours / 24);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  }
+
   const { toggle } = useSidebar();
   const router = useRouter();
   const userName = session?.user?.name ?? "Guest";
@@ -177,23 +192,49 @@ export default function Topbar({ title }: { title: string }) {
                     </div>
                   ) : (
                     <ul className="divide-y divide-slate-50">
-                      {notifications.map((n) => (
-                        <li key={n.id} className={`p-4 transition-colors ${!n.isRead ? 'bg-emerald-50/30' : 'hover:bg-slate-50'}`}>
-                          <div className="flex gap-3">
-                            <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full 
-                              ${n.type === 'SUCCESS' ? 'bg-emerald-500' :
-                                n.type === 'WARNING' ? 'bg-amber-500' :
-                                  n.type === 'ERROR' ? 'bg-rose-500' : 'bg-indigo-500'}`}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-slate-900 leading-snug">{n.message}</p>
-                              <p className="mt-1 text-[10px] text-slate-400">
-                                {new Date(n.createdAt).toLocaleString()}
-                              </p>
+                      {notifications.map((n) => {
+                        let icon = <Info size={16} />;
+                        let colorClass = "bg-blue-50 text-blue-600";
+                        let title = "Update";
+
+                        if (n.type === "SUCCESS") {
+                          icon = <CheckCircle size={16} />;
+                          colorClass = "bg-emerald-50 text-emerald-600";
+                          title = "Successful";
+                        } else if (n.type === "ERROR") {
+                          icon = <AlertCircle size={16} />;
+                          colorClass = "bg-rose-50 text-rose-600";
+                          title = "Error";
+                        } else if (n.type === "WARNING") {
+                          icon = <AlertCircle size={16} />;
+                          colorClass = "bg-amber-50 text-amber-600";
+                          title = "Warning";
+                        }
+
+                        // Heuristic: If message contains "delete", maybe treat as Error style if user desired, 
+                        // but usually delete success is success. 
+                        // The user said "notification icon for delete update and create to be like this".
+                        // Assuming they mapped "Update" -> Blue (Info), "Error" -> Red, "Successful" -> Green.
+
+                        return (
+                          <li key={n.id} className={`p-4 transition-colors border-b border-slate-50 last:border-0 ${!n.isRead ? 'bg-slate-50/50' : 'hover:bg-slate-50'}`}>
+                            <div className="flex gap-4">
+                              <div className={`h-10 w-10 shrink-0 flex items-center justify-center rounded-full ${colorClass}`}>
+                                {icon}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <h4 className="text-sm font-bold text-slate-900">{title}</h4>
+                                  <span className="text-[10px] text-slate-400">{timeAgo(n.createdAt)}</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                                  {n.message}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
