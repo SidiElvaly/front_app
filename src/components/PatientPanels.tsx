@@ -90,8 +90,17 @@ export async function callExtractFileAPI(file: File, patientId: string) {
         cache: "no-store",
     });
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `Request failed with status ${res.status}`);
+    }
+
+    const json = await res.json();
+    if (json.error) {
+        throw new Error(typeof json.error === "string" ? json.error : JSON.stringify(json.error));
+    }
+
+    return json;
 }
 
 async function callSemanticSearchAPI(query: string, patientId: string): Promise<SearchHit[]> {
