@@ -205,16 +205,15 @@ export default function Topbar({ title }: { title: string }) {
                           icon = <AlertCircle size={16} />;
                           colorClass = "bg-rose-50 text-rose-600";
                           title = "Error";
-                        } else if (n.type === "WARNING") {
+                        } else if (n.type === "DELETE") {
                           icon = <AlertCircle size={16} />;
-                          colorClass = "bg-amber-50 text-amber-600";
-                          title = "Warning";
+                          colorClass = "bg-rose-50 text-rose-600";
+                          title = "Delete";
                         }
 
                         // Heuristic: If message contains "delete", maybe treat as Error style if user desired, 
                         // but usually delete success is success. 
                         // The user said "notification icon for delete update and create to be like this".
-                        // Assuming they mapped "Update" -> Blue (Info), "Error" -> Red, "Successful" -> Green.
 
                         return (
                           <li key={n.id} className={`p-4 transition-colors border-b border-slate-50 last:border-0 ${!n.isRead ? 'bg-slate-50/50' : 'hover:bg-slate-50'}`}>
