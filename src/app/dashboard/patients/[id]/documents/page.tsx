@@ -57,11 +57,16 @@ export default function PatientDocumentsPage({
         setUploading(true);
         setExtracting(false);
 
-        // Process files sequentially to avoid overwhelming the server or UI state
+        // Process files sequentially
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
+            let uploadedDocId: string | null = null;
+
             try {
                 // 1. Upload
+                setExtracting(false);
+                // Using "Uploading..." state conceptually here
+
                 const formData = new FormData();
                 formData.append("file", file);
                 formData.append("title", file.name);
@@ -74,22 +79,40 @@ export default function PatientDocumentsPage({
                 const saved = await res.json();
                 if (!res.ok) throw new Error(saved?.error || `Upload failed for ${file.name}`);
 
-                if (saved?.document) {
-                    setDocs((prev) => [saved.document as PatientDoc, ...prev]);
-                    toast.success(`Uploaded: ${file.name}`);
+                if (saved?.document?.id) {
+                    uploadedDocId = saved.document.id;
+                } else {
+                    throw new Error("Invalid server response: missing document ID");
                 }
 
-                // 2. Extract (Optimistic: don't block next upload on extraction, but maybe do?)
-                // To keep it simple and reliable, we'll wait for extraction start, or trigger it async
-                // Here we perform it sequentially to ensure `patientId` correlation is kept simple
+                // 2. Extract & Index (Blocking UI update until success)
                 setExtracting(true);
                 await callExtractFileAPI(file, patient.id);
-                toast.success(`Indexed: ${file.name}`);
+
+                // 3. Update UI only on success
+                if (saved?.document) {
+                    setDocs((prev) => [saved.document as PatientDoc, ...prev]);
+                    toast.success(`Indexed: ${file.name}`);
+                }
 
             } catch (err) {
                 console.error(err);
-                handleClientError(err, "Upload failed", `Could not upload ${file.name}`);
-                // Continue to next file even if one fails
+                const msg = err instanceof Error ? err.message : "Details unavailable";
+
+                // Rollback: Delete the uploaded document if indexing failed
+                if (uploadedDocId) {
+                    try {
+                        await fetch(`/api/patients/${patient.id}/documents/${uploadedDocId}`, {
+                            method: "DELETE"
+                        });
+                        console.log(`Rolled back upload for ${uploadedDocId}`);
+                    } catch (cleanupErr) {
+                        console.error("Failed to rollback document:", cleanupErr);
+                    }
+                }
+
+                handleClientError(err, "Indexing failed", `Could not index ${file.name}: ${msg}`);
+                // Continue to next file
             }
         }
 

@@ -44,6 +44,20 @@ export async function DELETE(_req: Request, ctx: Ctx) {
   try {
     const { docId } = await ctx.params;
 
+    // Delete from Qdrant via external API (Best effort)
+    const extractUrl = process.env.EXTRACT_API_URL;
+    if (extractUrl) {
+      try {
+        await fetch(`${extractUrl}/delete-file`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ docId }),
+        });
+      } catch (e) {
+        console.error("Failed to delete from Qdrant:", e);
+      }
+    }
+
     await db.patientDocument.delete({
       where: { id: docId },
     });
